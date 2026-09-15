@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from database import get_session
 from main import app
-from models import Dimension, Floor, Material, Member, Zone
+from models import Floor, Material, Member, Section, Zone
 
 pytestmark = pytest.mark.unit
 
@@ -65,14 +65,14 @@ def test_get_member_returns_detail_when_found(
         floor_id="ST02", floor_name="roof level", elevation=3000, building_id="B01"
     )
     material = Material(
-        material_id="K250",
-        material_name="concrete K250",
-        material_type="concrete",
-        compressive_strength_kg_cm2=250,
+        mat_id="K250",
+        mat_name="concrete K250",
+        mat_type="concrete",
+        mat_strength=250,
     )
-    dimension = Dimension(
-        dimension_id="B1",
-        member_type="beam",
+    section = Section(
+        sect_id="B1",
+        obj_type="beam",
         dim={"shape": "rectangular", "width": 150, "depth": 300},
     )
     zone = Zone(zone_id="Z02", pour_seq=2, building_id="B01")
@@ -80,7 +80,7 @@ def test_get_member_returns_detail_when_found(
     lookup = {
         Floor: floor,
         Material: material,
-        Dimension: dimension,
+        Section: section,
         Zone: zone,
     }
     mock_session.get.side_effect = lambda model, _id: (
@@ -94,4 +94,4 @@ def test_get_member_returns_detail_when_found(
     assert body["storey_name"] == "roof level"
     assert body["material_strength_kg_cm2"] == 250
     assert body["pour_sequence"] == 2
-    assert body["dimension_section"] == dimension.dim
+    assert body["dimension_section"] == section.dim

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from database import engine
-from models import Building, Dimension, Floor, Grid, Material, Member, Project, Zone
+from models import Building, Floor, Grid, Material, Member, Project, Section, Zone
 
 
 def make_member(
@@ -32,37 +32,37 @@ def seed_data() -> None:
 
         session.add_all(
             [
-                Dimension(
-                    dimension_id="C1",
-                    member_type="col",
+                Section(
+                    sect_id="C1",
+                    obj_type="col",
                     dim={
                         "shape": "rectangular",
                         "width": 300,
                         "depth": 300,
                     },
                 ),
-                Dimension(
-                    dimension_id="C2",
-                    member_type="col",
+                Section(
+                    sect_id="C2",
+                    obj_type="col",
                     dim={"shape": "circular", "diameter": 300},
                 ),
-                Dimension(
-                    dimension_id="B1",
-                    member_type="beam",
+                Section(
+                    sect_id="B1",
+                    obj_type="beam",
                     dim={
                         "shape": "rectangular",
                         "width": 150,
                         "depth": 300,
                     },
                 ),
-                Dimension(
-                    dimension_id="W1",
-                    member_type="wall",
+                Section(
+                    sect_id="W1",
+                    obj_type="wall",
                     dim={"thickness": 100},
                 ),
-                Dimension(
-                    dimension_id="S1",
-                    member_type="slab",
+                Section(
+                    sect_id="S1",
+                    obj_type="slab",
                     dim={"thickness": 120},
                 ),
             ]
@@ -71,16 +71,16 @@ def seed_data() -> None:
         session.add_all(
             [
                 Material(
-                    material_id="K100",
-                    material_name="concrete K100",
-                    material_type="concrete",
-                    compressive_strength_kg_cm2=100,
+                    mat_id="K100",
+                    mat_name="concrete K100",
+                    mat_type="concrete",
+                    mat_strength=100,
                 ),
                 Material(
-                    material_id="K250",
-                    material_name="concrete K250",
-                    material_type="concrete",
-                    compressive_strength_kg_cm2=250,
+                    mat_id="K250",
+                    mat_name="concrete K250",
+                    mat_type="concrete",
+                    mat_strength=250,
                 ),
             ]
         )

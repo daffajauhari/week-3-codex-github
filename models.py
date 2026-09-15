@@ -41,22 +41,25 @@ class Building(Base):
     )
 
 
-class Dimension(Base):
-    __tablename__ = "dimensions"
+class Section(Base):
+    __tablename__ = "sections"
 
-    dimension_id: Mapped[str] = mapped_column(String, primary_key=True)
-    member_type: Mapped[str] = mapped_column(String)
+    sect_id: Mapped[str] = mapped_column(String, primary_key=True)
+    obj_type: Mapped[str] = mapped_column(String)
     dim: Mapped[dict[str, str | int]] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
 
     __table_args__ = (
         CheckConstraint(
-            "member_type IN ('col', 'beam', 'wall', 'slab')",
-            name="ck_dimensions_member_type",
+            "obj_type IN ('col', 'beam', 'wall', 'slab')",
+            name="ck_sections_obj_type",
         ),
         UniqueConstraint(
-            "dimension_id",
-            "member_type",
-            name="uq_dimensions_id_type",
+            "sect_id",
+            "obj_type",
+            name="uq_sections_id_type",
         ),
     )
 
@@ -64,10 +67,25 @@ class Dimension(Base):
 class Material(Base):
     __tablename__ = "materials"
 
-    material_id: Mapped[str] = mapped_column(String, primary_key=True)
-    material_name: Mapped[str] = mapped_column(String)
-    material_type: Mapped[str] = mapped_column(String)
-    compressive_strength_kg_cm2: Mapped[int] = mapped_column(Integer)
+    mat_id: Mapped[str] = mapped_column(String, primary_key=True)
+    mat_name: Mapped[str] = mapped_column(String)
+    mat_type: Mapped[str] = mapped_column(String)
+    mat_strength: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
+
+
+class BarSpec(Base):
+    __tablename__ = "barspec"
+
+    barspec_id: Mapped[str] = mapped_column(String, primary_key=True)
+    barspec_dia: Mapped[int] = mapped_column(Integer, nullable=False)
+    barspec_type: Mapped[str] = mapped_column(String, nullable=False)
+    barspec_grade: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
 
 
 class Zone(Base):
@@ -131,7 +149,7 @@ class Member(Base):
     )
     dimension_id: Mapped[str] = mapped_column(String)
     material_id: Mapped[str] = mapped_column(
-        String, ForeignKey("materials.material_id")
+        String, ForeignKey("materials.mat_id")
     )
     zone_id: Mapped[str] = mapped_column(
         String, ForeignKey("zones.zone_id")
@@ -141,7 +159,7 @@ class Member(Base):
     __table_args__ = (
         ForeignKeyConstraint(
             ["dimension_id", "member_type"],
-            ["dimensions.dimension_id", "dimensions.member_type"],
+            ["sections.sect_id", "sections.obj_type"],
             name="fk_members_dimension_type",
         ),
     )

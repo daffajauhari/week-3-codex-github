@@ -7,7 +7,7 @@ from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from database import engine, get_session
-from models import Dimension, Floor, Material, Member, Zone
+from models import Floor, Material, Member, Section, Zone
 from schemas import MemberDetailResponse, MemberResponse
 
 app = FastAPI()
@@ -75,18 +75,18 @@ def get_member(
 
     floor = session.get(Floor, member.storey_id)
     material = session.get(Material, member.material_id)
-    dimension = session.get(Dimension, member.dimension_id)
+    section = session.get(Section, member.dimension_id)
     zone = session.get(Zone, member.zone_id)
     assert floor is not None
     assert material is not None
-    assert dimension is not None
+    assert section is not None
     assert zone is not None
 
 
     return MemberDetailResponse(
         **MemberResponse.model_validate(member).model_dump(),
         storey_name=floor.floor_name,
-        material_strength_kg_cm2=material.compressive_strength_kg_cm2,
-        dimension_section=dimension.dim,
+        material_strength_kg_cm2=material.mat_strength,
+        dimension_section=section.dim,
         pour_sequence=zone.pour_seq,
     )
