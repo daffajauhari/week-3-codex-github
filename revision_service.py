@@ -289,28 +289,14 @@ def sync_active_status(
     """Workflow 3: Active Status Sync (D17, D18).
 
     Bulk Upload only (D33) - Interactive Edit handles deletion through its
-    own explicit deleted_stable_ids list instead. Runs once after every
-    object in the batch has been through Workflows 1-2. Anything present
-    in the previous revision's baseline but absent from
-    processed_stable_ids is flagged deleted, unless it was already
+    own explicit deleted_stable_ids list instead (apply_explicit_deletions).
+    Runs once after every object in the batch has been through Workflows
+    1-2. Anything present in the previous revision's baseline but absent
+    from processed_stable_ids is flagged deleted, unless it was already
     inactive - the guard against re-flagging the same deletion on every
     later revision (D17).
     """
-    current_revision = session.get(Revision, rev_id)
-    assert current_revision is not None
-
-    previous_revision = session.scalars(
-        select(Revision).where(
-            Revision.building_id == building_id,
-            Revision.rev_number == current_revision.rev_number - 1,
-        )
-    ).first()
-    if previous_revision is None:
-        return []
-
-    previous_objects = session.scalars(
-        select(Object).where(Object.rev_id == previous_revision.rev_id)
-    ).all()
+    previous_objects = _get_previous_revision_objects(session, building_id, rev_id)
 
     deleted_objects: list[Object] = []
     for previous in previous_objects:
@@ -323,42 +309,113 @@ def sync_active_status(
             continue
 
         identity.is_active = False
-
-        deleted_object = Object(
-            obj_id=str(uuid4()),
-            obj_mark=previous.obj_mark,
-            stable_id=previous.stable_id,
-            rev_id=rev_id,
-            change_status="deleted",
-            obj_type=previous.obj_type,
-            floor_id=previous.floor_id,
-            zone_id=previous.zone_id,
-            sect_id=previous.sect_id,
-            mat_id=previous.mat_id,
-            geometry_points=previous.geometry_points,
-        )
-        session.add(deleted_object)
-
-        previous_bars = session.scalars(
-            select(Reinforcement).where(Reinforcement.obj_id == previous.obj_id)
-        ).all()
-        for bar in previous_bars:
-            session.add(
-                Reinforcement(
-                    bar_id=str(uuid4()),
-                    obj_id=deleted_object.obj_id,
-                    barspec_id=bar.barspec_id,
-                    bar_role=bar.bar_role,
-                    bar_count=bar.bar_count,
-                    bar_len=bar.bar_len,
-                    bar_space=bar.bar_space,
-                    bar_hook_type=bar.bar_hook_type,
-                )
-            )
-
-        deleted_objects.append(deleted_object)
+        deleted_objects.append(_duplicate_object(session, previous, rev_id, "deleted"))
 
     return deleted_objects
+
+
+def apply_explicit_deletions(
+    session: Session, rev_id: str, deleted_stable_ids: Sequence[str]
+) -> list[Object]:
+    """Interactive Edit's explicit deletion step (D33, D34).
+
+    Same end effect as Workflow 3's absence-based deletion, but triggered
+    by an explicit stable_id list rather than inferred from what's missing
+    from the payload - Interactive Edit never treats "not mentioned" as
+    "deleted" (D33), so it needs this instead of sync_active_status.
+    """
+    deleted_objects: list[Object] = []
+    for stable_id in deleted_stable_ids:
+        identity = session.get(Identity, stable_id)
+        if identity is None or not identity.is_active:
+            continue
+
+        previous = _get_previous_object(session, stable_id, rev_id)
+        if previous is None:
+            continue
+
+        identity.is_active = False
+        deleted_objects.append(_duplicate_object(session, previous, rev_id, "deleted"))
+
+    return deleted_objects
+
+
+def carry_forward_unchanged(
+    session: Session, building_id: str, rev_id: str, touched_stable_ids: set[str]
+) -> list[Object]:
+    """Interactive Edit's carry-forward step (D33).
+
+    Every stable_id from the previous revision's baseline that appears in
+    neither changed_objects nor deleted_stable_ids (touched_stable_ids
+    covers both) is duplicated forward as-is with change_status
+    'unchanged', so a partial payload never silently drops an object -
+    unlike Bulk Upload, Interactive Edit's absence never means deleted.
+    """
+    previous_objects = _get_previous_revision_objects(session, building_id, rev_id)
+
+    return [
+        _duplicate_object(session, previous, rev_id, "unchanged")
+        for previous in previous_objects
+        if previous.stable_id not in touched_stable_ids
+    ]
+
+
+def _get_previous_revision_objects(
+    session: Session, building_id: str, rev_id: str
+) -> Sequence[Object]:
+    current_revision = session.get(Revision, rev_id)
+    assert current_revision is not None
+
+    previous_revision = session.scalars(
+        select(Revision).where(
+            Revision.building_id == building_id,
+            Revision.rev_number == current_revision.rev_number - 1,
+        )
+    ).first()
+    if previous_revision is None:
+        return []
+
+    return session.scalars(
+        select(Object).where(Object.rev_id == previous_revision.rev_id)
+    ).all()
+
+
+def _duplicate_object(
+    session: Session, previous: Object, rev_id: str, change_status: str
+) -> Object:
+    new_object = Object(
+        obj_id=str(uuid4()),
+        obj_mark=previous.obj_mark,
+        stable_id=previous.stable_id,
+        rev_id=rev_id,
+        change_status=change_status,
+        obj_type=previous.obj_type,
+        floor_id=previous.floor_id,
+        zone_id=previous.zone_id,
+        sect_id=previous.sect_id,
+        mat_id=previous.mat_id,
+        geometry_points=previous.geometry_points,
+    )
+    session.add(new_object)
+
+    previous_bars = session.scalars(
+        select(Reinforcement).where(Reinforcement.obj_id == previous.obj_id)
+    ).all()
+    for bar in previous_bars:
+        session.add(
+            Reinforcement(
+                bar_id=str(uuid4()),
+                obj_id=new_object.obj_id,
+                barspec_id=bar.barspec_id,
+                bar_role=bar.bar_role,
+                bar_count=bar.bar_count,
+                bar_len=bar.bar_len,
+                bar_space=bar.bar_space,
+                bar_hook_type=bar.bar_hook_type,
+            )
+        )
+
+    return new_object
 
 
 def _check_contextual_completeness(objects: Sequence[ObjectInput]) -> list[str]:

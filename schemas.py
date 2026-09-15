@@ -44,6 +44,11 @@ class BulkUploadRequest(BaseModel):
     objects: list[ObjectCreate]
 
 
+class EditRevisionRequest(BaseModel):
+    changed_objects: list[ObjectCreate] = Field(default_factory=list)
+    deleted_stable_ids: list[str] = Field(default_factory=list)
+
+
 class RevisionObjectResult(BaseModel):
     obj_id: str
     obj_mark: str
