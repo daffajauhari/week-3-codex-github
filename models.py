@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -157,6 +158,17 @@ class Revision(Base):
             "rev_number",
             name="uq_revisions_building_rev_number",
         ),
+    )
+
+
+class Identity(Base):
+    __tablename__ = "identities"
+
+    stable_id: Mapped[str] = mapped_column(String, primary_key=True)
+    ifc_global_id: Mapped[str | None] = mapped_column(String, unique=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
     )
 
 
