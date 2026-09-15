@@ -1,11 +1,22 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import Protocol
 from uuid import uuid4
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from models import BarSpec, Floor, Identity, Material, Section, Zone
+from models import (
+    BarSpec,
+    Floor,
+    Identity,
+    Material,
+    Object,
+    Reinforcement,
+    Revision,
+    Section,
+    Zone,
+)
 
 _AXIS_POINT_TYPES = {"col", "beam"}
 _BOUNDARY_POINT_TYPES = {"wall", "slab"}
@@ -140,6 +151,136 @@ def assign_stable_ids(
         )
 
     return assignments
+
+
+def determine_change_status(
+    session: Session,
+    obj_input: ObjectInput,
+    assignment: StableIdAssignment,
+    rev_id: str,
+) -> Object:
+    """Workflow 2: Change Status Determination (D18, D19).
+
+    Inserts a fresh Object row (and its Reinforcement rows) for this input
+    with the resolved change_status, and returns the inserted Object. Runs
+    unconditionally, even for objects that come out 'unchanged' - every
+    object gets a full snapshot row every revision (D9).
+    """
+    if assignment.is_new:
+        change_status = "added"
+    elif assignment.is_restored:
+        change_status = "restored"
+    else:
+        previous = _get_previous_object(session, assignment.stable_id, rev_id)
+        if previous is None or _has_changed(session, previous, obj_input):
+            change_status = "modified"
+        else:
+            change_status = "unchanged"
+
+    new_object = Object(
+        obj_id=str(uuid4()),
+        obj_mark=obj_input.obj_mark,
+        stable_id=assignment.stable_id,
+        rev_id=rev_id,
+        change_status=change_status,
+        obj_type=obj_input.obj_type,
+        floor_id=obj_input.floor_id,
+        zone_id=obj_input.zone_id,
+        sect_id=obj_input.sect_id,
+        mat_id=obj_input.mat_id,
+        geometry_points=obj_input.geometry_points,
+    )
+    session.add(new_object)
+
+    for bar in obj_input.reinforcements:
+        session.add(
+            Reinforcement(
+                bar_id=str(uuid4()),
+                obj_id=new_object.obj_id,
+                barspec_id=bar.barspec_id,
+                bar_role=bar.bar_role,
+                bar_count=bar.bar_count,
+                bar_len=bar.bar_len,
+                bar_space=bar.bar_space,
+                bar_hook_type=bar.bar_hook_type,
+            )
+        )
+
+    return new_object
+
+
+def _get_previous_object(
+    session: Session, stable_id: str, rev_id: str
+) -> Object | None:
+    current_revision = session.get(Revision, rev_id)
+    assert current_revision is not None
+
+    previous_revision = session.scalars(
+        select(Revision).where(
+            Revision.building_id == current_revision.building_id,
+            Revision.rev_number == current_revision.rev_number - 1,
+        )
+    ).first()
+    if previous_revision is None:
+        return None
+
+    return session.scalars(
+        select(Object).where(
+            Object.stable_id == stable_id,
+            Object.rev_id == previous_revision.rev_id,
+        )
+    ).first()
+
+
+def _has_changed(session: Session, previous: Object, obj_input: ObjectInput) -> bool:
+    own_columns_changed = (
+        previous.obj_type != obj_input.obj_type
+        or previous.floor_id != obj_input.floor_id
+        or previous.zone_id != obj_input.zone_id
+        or previous.sect_id != obj_input.sect_id
+        or previous.mat_id != obj_input.mat_id
+        or previous.geometry_points != obj_input.geometry_points
+    )
+    return own_columns_changed or _reinforcements_changed(session, previous, obj_input)
+
+
+class _HasBarFields(Protocol):
+    bar_role: str
+    barspec_id: str
+    bar_count: int
+    bar_len: int
+    bar_space: int | None
+    bar_hook_type: str | None
+
+
+def _reinforcement_signature(bar: _HasBarFields) -> tuple[str, str, int, int, int, str]:
+    # bar_space/bar_hook_type are optional (VR-06); normalize None to a
+    # sentinel outside the real value range so tuples stay sortable without
+    # comparing None to int/str.
+    return (
+        bar.bar_role,
+        bar.barspec_id,
+        bar.bar_count,
+        bar.bar_len,
+        bar.bar_space if bar.bar_space is not None else -1,
+        bar.bar_hook_type or "",
+    )
+
+
+def _reinforcements_changed(
+    session: Session, previous: Object, obj_input: ObjectInput
+) -> bool:
+    previous_bars = session.scalars(
+        select(Reinforcement).where(Reinforcement.obj_id == previous.obj_id)
+    ).all()
+
+    previous_signature = sorted(
+        _reinforcement_signature(bar) for bar in previous_bars
+    )
+    incoming_signature = sorted(
+        _reinforcement_signature(bar) for bar in obj_input.reinforcements
+    )
+    return previous_signature != incoming_signature
 
 
 def _check_contextual_completeness(objects: Sequence[ObjectInput]) -> list[str]:
