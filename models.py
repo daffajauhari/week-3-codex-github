@@ -1,10 +1,14 @@
+from datetime import datetime
+
 from sqlalchemy import (
     CheckConstraint,
+    DateTime,
     ForeignKey,
     ForeignKeyConstraint,
     Integer,
     String,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -12,6 +16,29 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     pass
+
+
+class Project(Base):
+    __tablename__ = "projects"
+
+    project_id: Mapped[str] = mapped_column(String, primary_key=True)
+    project_name: Mapped[str | None] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
+
+
+class Building(Base):
+    __tablename__ = "buildings"
+
+    building_id: Mapped[str] = mapped_column(String, primary_key=True)
+    building_name: Mapped[str | None] = mapped_column(String)
+    project_id: Mapped[str] = mapped_column(
+        String, ForeignKey("projects.project_id"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
 
 
 class Dimension(Base):
