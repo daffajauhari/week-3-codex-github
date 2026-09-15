@@ -1,10 +1,11 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from uuid import uuid4
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from models import BarSpec, Floor, Material, Section, Zone
+from models import BarSpec, Floor, Identity, Material, Section, Zone
 
 _AXIS_POINT_TYPES = {"col", "beam"}
 _BOUNDARY_POINT_TYPES = {"wall", "slab"}
@@ -86,6 +87,59 @@ def _check_referential_existence(
         problems.append(f"barspec_id '{barspec_id}' does not exist")
 
     return problems
+
+
+@dataclass
+class StableIdAssignment:
+    stable_id: str
+    is_new: bool
+    is_restored: bool
+
+
+def assign_stable_ids(
+    session: Session, objects: Sequence[ObjectInput]
+) -> list[StableIdAssignment]:
+    """Workflow 1: Stable ID Assignment (D18).
+
+    Only touches Identity - it never creates Object rows. Returns one
+    assignment per input object, in order.
+    """
+    assignments: list[StableIdAssignment] = []
+
+    for obj in objects:
+        if obj.is_new:
+            stable_id = str(uuid4())
+            session.add(Identity(stable_id=stable_id, is_active=True))
+            assignments.append(
+                StableIdAssignment(stable_id=stable_id, is_new=True, is_restored=False)
+            )
+            continue
+
+        if obj.stable_id is None:
+            raise ValueError(
+                f"object '{obj.obj_mark}' has is_new=False but no stable_id"
+            )
+
+        identity = session.get(Identity, obj.stable_id)
+        if identity is None:
+            raise ValueError(
+                f"object '{obj.obj_mark}' references unknown stable_id "
+                f"'{obj.stable_id}'"
+            )
+
+        was_inactive = not identity.is_active
+        if was_inactive:
+            identity.is_active = True
+
+        assignments.append(
+            StableIdAssignment(
+                stable_id=identity.stable_id,
+                is_new=False,
+                is_restored=was_inactive,
+            )
+        )
+
+    return assignments
 
 
 def _check_contextual_completeness(objects: Sequence[ObjectInput]) -> list[str]:
