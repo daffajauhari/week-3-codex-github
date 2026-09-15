@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import Protocol
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -243,9 +244,16 @@ def _has_changed(session: Session, previous: Object, obj_input: ObjectInput) -> 
     return own_columns_changed or _reinforcements_changed(session, previous, obj_input)
 
 
-def _reinforcement_signature(
-    bar: Reinforcement | ReinforcementInput,
-) -> tuple[str, str, int, int, int, str]:
+class _HasBarFields(Protocol):
+    bar_role: str
+    barspec_id: str
+    bar_count: int
+    bar_len: int
+    bar_space: int | None
+    bar_hook_type: str | None
+
+
+def _reinforcement_signature(bar: _HasBarFields) -> tuple[str, str, int, int, int, str]:
     # bar_space/bar_hook_type are optional (VR-06); normalize None to a
     # sentinel outside the real value range so tuples stay sortable without
     # comparing None to int/str.
