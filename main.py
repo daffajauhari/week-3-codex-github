@@ -1,14 +1,10 @@
 import os
-from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select, text
-from sqlalchemy.orm import Session
+from sqlalchemy import text
 
-from database import engine, get_session
-from models import Floor, Material, Member, Section, Zone
-from schemas import MemberDetailResponse, MemberResponse
+from database import engine
 
 app = FastAPI()
 
@@ -38,55 +34,3 @@ def check_database() -> dict[str, str]:
         "status": "connected",
         "database": database_name,
     }
-
-
-@app.get(
-    "/members",
-    response_model=list[MemberResponse],
-    status_code=status.HTTP_200_OK,
-)
-def get_members(
-    session: Annotated[Session, Depends(get_session)],
-) -> list[MemberResponse]:
-    statement = select(Member).order_by(Member.member_id)
-    members = session.scalars(statement).all()
-
-    return [
-        MemberResponse.model_validate(member)
-        for member in members
-    ]
-
-@app.get(
-    "/members/{member_id}",
-    response_model=MemberDetailResponse,
-    status_code=status.HTTP_200_OK,
-)
-def get_member(
-    member_id: str,
-    session: Annotated[Session, Depends(get_session)],
-) -> MemberDetailResponse:
-    member = session.get(Member, member_id)
-
-    if member is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Member not found",
-        )
-
-    floor = session.get(Floor, member.storey_id)
-    material = session.get(Material, member.material_id)
-    section = session.get(Section, member.dimension_id)
-    zone = session.get(Zone, member.zone_id)
-    assert floor is not None
-    assert material is not None
-    assert section is not None
-    assert zone is not None
-
-
-    return MemberDetailResponse(
-        **MemberResponse.model_validate(member).model_dump(),
-        storey_name=floor.floor_name,
-        material_strength_kg_cm2=material.mat_strength,
-        dimension_section=section.dim,
-        pour_sequence=zone.pour_seq,
-    )

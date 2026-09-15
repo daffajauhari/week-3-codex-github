@@ -1,26 +1,7 @@
 from sqlalchemy.orm import Session
 
 from database import engine
-from models import Building, Floor, Grid, Material, Member, Project, Section, Zone
-
-
-def make_member(
-    member_id: str,
-    member_type: str,
-    dimension_id: str,
-    material_id: str,
-    zone_id: str,
-    points: list[list[int]],
-) -> Member:
-    return Member(
-        member_id=member_id,
-        member_type=member_type,
-        storey_id="02",
-        dimension_id=dimension_id,
-        material_id=material_id,
-        zone_id=zone_id,
-        geometry_points=points,
-    )
+from models import Building, Floor, Grid, Material, Project, Section, Zone
 
 
 def seed_data() -> None:
@@ -152,81 +133,8 @@ def seed_data() -> None:
 
         session.flush()
 
-        session.add_all(
-            [
-                make_member(
-                    "C2.02.A1", "col", "C2", "K250", "Z01",
-                    [[0, 0, 0], [0, 0, 3000]],
-                ),
-                make_member(
-                    "C2.02.A2", "col", "C2", "K250", "Z01",
-                    [[4000, 0, 0], [4000, 0, 3000]],
-                ),
-                make_member(
-                    "C1.02.B2", "col", "C1", "K250", "Z01",
-                    [[4000, 3000, 0], [4000, 3000, 3000]],
-                ),
-                make_member(
-                    "C1.02.B1", "col", "C1", "K250", "Z01",
-                    [[0, 3000, 0], [0, 3000, 3000]],
-                ),
-                make_member(
-                    "B1.02.A1A2", "beam", "B1", "K250", "Z02",
-                    [[0, 0, 3000], [4000, 0, 3000]],
-                ),
-                make_member(
-                    "B1.02.A2B2", "beam", "B1", "K250", "Z02",
-                    [[4000, 0, 3000], [4000, 3000, 3000]],
-                ),
-                make_member(
-                    "B1.02.B2B1", "beam", "B1", "K250", "Z02",
-                    [[4000, 3000, 3000], [0, 3000, 3000]],
-                ),
-                make_member(
-                    "B1.02.B1A1", "beam", "B1", "K250", "Z02",
-                    [[0, 3000, 3000], [0, 0, 3000]],
-                ),
-                make_member(
-                    "S1.02.A1A2B2B1", "slab", "S1", "K250", "Z02",
-                    [
-                        [0, 0, 3000],
-                        [4000, 0, 3000],
-                        [4000, 3000, 3000],
-                        [0, 3000, 3000],
-                    ],
-                ),
-                make_member(
-                    "W1.02.A1B1", "wall", "W1", "K100", "Z01",
-                    [
-                        [0, 0, 0],
-                        [0, 3000, 0],
-                        [0, 3000, 3000],
-                        [0, 0, 3000],
-                    ],
-                ),
-                make_member(
-                    "W1.02.B1B2", "wall", "W1", "K100", "Z01",
-                    [
-                        [0, 3000, 0],
-                        [4000, 3000, 0],
-                        [4000, 3000, 3000],
-                        [0, 3000, 3000],
-                    ],
-                ),
-                make_member(
-                    "W1.02.B2A2", "wall", "W1", "K100", "Z01",
-                    [
-                        [4000, 3000, 0],
-                        [4000, 0, 0],
-                        [4000, 0, 3000],
-                        [4000, 3000, 3000],
-                    ],
-                ),
-            ]
-        )
-
-    print("Seed completed: 1 project, 1 building, 5 dimensions, 2 materials,")
-    print("2 zones, 2 floors, 4 grids, and 12 members inserted.")
+    print("Seed completed: 1 project, 1 building, 5 sections, 2 materials,")
+    print("2 zones, 2 floors, and 4 grids inserted.")
 
 
 if __name__ == "__main__":

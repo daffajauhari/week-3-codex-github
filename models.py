@@ -172,27 +172,40 @@ class Identity(Base):
     )
 
 
-class Member(Base):
-    __tablename__ = "members"
+class Object(Base):
+    __tablename__ = "objects"
 
-    member_id: Mapped[str] = mapped_column(String, primary_key=True)
-    member_type: Mapped[str] = mapped_column(String)
-    storey_id: Mapped[str] = mapped_column(
-        String, ForeignKey("floors.floor_id")
+    obj_id: Mapped[str] = mapped_column(String, primary_key=True)
+    obj_mark: Mapped[str] = mapped_column(String, nullable=False)
+    stable_id: Mapped[str] = mapped_column(
+        String, ForeignKey("identities.stable_id"), nullable=False
     )
-    dimension_id: Mapped[str] = mapped_column(String)
-    material_id: Mapped[str] = mapped_column(
-        String, ForeignKey("materials.mat_id")
+    rev_id: Mapped[str] = mapped_column(
+        String, ForeignKey("revisions.rev_id"), nullable=False
+    )
+    change_status: Mapped[str] = mapped_column(String, nullable=False)
+    obj_type: Mapped[str] = mapped_column(String, nullable=False)
+    floor_id: Mapped[str] = mapped_column(
+        String, ForeignKey("floors.floor_id"), nullable=False
     )
     zone_id: Mapped[str] = mapped_column(
-        String, ForeignKey("zones.zone_id")
+        String, ForeignKey("zones.zone_id"), nullable=False
     )
-    geometry_points: Mapped[list[list[int]]] = mapped_column(JSONB)
+    sect_id: Mapped[str] = mapped_column(String, nullable=False)
+    mat_id: Mapped[str] = mapped_column(
+        String, ForeignKey("materials.mat_id"), nullable=False
+    )
+    geometry_points: Mapped[list[list[int]]] = mapped_column(JSONB, nullable=False)
 
     __table_args__ = (
         ForeignKeyConstraint(
-            ["dimension_id", "member_type"],
+            ["sect_id", "obj_type"],
             ["sections.sect_id", "sections.obj_type"],
-            name="fk_members_dimension_type",
+            name="fk_objects_sect_id_obj_type",
+        ),
+        CheckConstraint(
+            "change_status IN "
+            "('added', 'modified', 'unchanged', 'deleted', 'restored')",
+            name="ck_objects_change_status",
         ),
     )
