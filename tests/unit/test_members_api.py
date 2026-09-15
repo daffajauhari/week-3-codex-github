@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from database import get_session
 from main import app
-from models import Dimension, Material, Member, Storey, Zone
+from models import Dimension, Floor, Material, Member, Zone
 
 pytestmark = pytest.mark.unit
 
@@ -61,7 +61,9 @@ def test_get_member_returns_detail_when_found(
         zone_id="Z02",
         geometry_points=[[0, 0, 3000], [4000, 0, 3000]],
     )
-    storey = Storey(storey_id="ST02", storey_name="roof level", elevation_mm=3000)
+    floor = Floor(
+        floor_id="ST02", floor_name="roof level", elevation=3000, building_id="B01"
+    )
     material = Material(
         material_id="K250",
         material_name="concrete K250",
@@ -73,10 +75,10 @@ def test_get_member_returns_detail_when_found(
         member_type="beam",
         dim={"shape": "rectangular", "width": 150, "depth": 300},
     )
-    zone = Zone(zone_id="Z02", zone_name="roof beams and slab", pour_sequence=2)
+    zone = Zone(zone_id="Z02", pour_seq=2, building_id="B01")
 
     lookup = {
-        Storey: storey,
+        Floor: floor,
         Material: material,
         Dimension: dimension,
         Zone: zone,

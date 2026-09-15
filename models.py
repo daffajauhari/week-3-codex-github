@@ -74,29 +74,49 @@ class Zone(Base):
     __tablename__ = "zones"
 
     zone_id: Mapped[str] = mapped_column(String, primary_key=True)
-    zone_name: Mapped[str] = mapped_column(String)
-    pour_sequence: Mapped[int] = mapped_column(Integer)
-    
+    pour_seq: Mapped[int] = mapped_column(Integer, nullable=False)
+    building_id: Mapped[str] = mapped_column(
+        String, ForeignKey("buildings.building_id"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
 
-class Storey(Base):
-    __tablename__ = "storeys"
 
-    storey_id: Mapped[str] = mapped_column(String, primary_key=True)
-    storey_name: Mapped[str] = mapped_column(String)
-    elevation_mm: Mapped[int] = mapped_column(Integer)
+class Floor(Base):
+    __tablename__ = "floors"
+
+    floor_id: Mapped[str] = mapped_column(String, primary_key=True)
+    floor_name: Mapped[str] = mapped_column(String, nullable=False)
+    elevation: Mapped[int] = mapped_column(Integer, nullable=False)
+    building_id: Mapped[str] = mapped_column(
+        String, ForeignKey("buildings.building_id"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
 
 
 class Grid(Base):
-    __tablename__ = "grids"
+    __tablename__ = "grid"
 
-    grid_axis: Mapped[str] = mapped_column(String, primary_key=True)
-    grid_label: Mapped[str] = mapped_column(String, primary_key=True)
-    coordinate_mm: Mapped[int] = mapped_column(Integer)
+    grid_id: Mapped[str] = mapped_column(String, primary_key=True)
+    building_id: Mapped[str] = mapped_column(
+        String, ForeignKey("buildings.building_id"), nullable=False
+    )
+    grid_label: Mapped[str] = mapped_column(String, nullable=False)
+    grid_axis: Mapped[str] = mapped_column(String, nullable=False)
+    grid_coord: Mapped[dict[str, str | int]] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
 
     __table_args__ = (
-        CheckConstraint(
-            "grid_axis IN ('x', 'y')",
-            name="ck_grids_axis",
+        UniqueConstraint(
+            "building_id",
+            "grid_label",
+            "grid_axis",
+            name="uq_grid_building_label_axis",
         ),
     )
 
@@ -107,7 +127,7 @@ class Member(Base):
     member_id: Mapped[str] = mapped_column(String, primary_key=True)
     member_type: Mapped[str] = mapped_column(String)
     storey_id: Mapped[str] = mapped_column(
-        String, ForeignKey("storeys.storey_id")
+        String, ForeignKey("floors.floor_id")
     )
     dimension_id: Mapped[str] = mapped_column(String)
     material_id: Mapped[str] = mapped_column(

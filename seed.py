@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from database import engine
-from models import Dimension, Grid, Material, Member, Storey, Zone
+from models import Building, Dimension, Floor, Grid, Material, Member, Project, Zone
 
 
 def make_member(
@@ -25,6 +25,11 @@ def make_member(
 
 def seed_data() -> None:
     with Session(engine) as session, session.begin():
+        session.add(Project(project_id="P01", project_name="AISIMS pilot project"))
+        session.flush()
+        session.add(Building(building_id="B01", building_name="Tower A", project_id="P01"))
+        session.flush()
+
         session.add_all(
             [
                 Dimension(
@@ -84,28 +89,30 @@ def seed_data() -> None:
             [
                 Zone(
                     zone_id="Z01",
-                    zone_name="columns and walls",
-                    pour_sequence=1,
+                    pour_seq=1,
+                    building_id="B01",
                 ),
                 Zone(
                     zone_id="Z02",
-                    zone_name="roof beams and slab",
-                    pour_sequence=2,
+                    pour_seq=2,
+                    building_id="B01",
                 ),
             ]
         )
 
         session.add_all(
             [
-                Storey(
-                    storey_id="01",
-                    storey_name="base level",
-                    elevation_mm=0,
+                Floor(
+                    floor_id="01",
+                    floor_name="base level",
+                    elevation=0,
+                    building_id="B01",
                 ),
-                Storey(
-                    storey_id="02",
-                    storey_name="roof level",
-                    elevation_mm=3000,
+                Floor(
+                    floor_id="02",
+                    floor_name="roof level",
+                    elevation=3000,
+                    building_id="B01",
                 ),
             ]
         )
@@ -113,24 +120,32 @@ def seed_data() -> None:
         session.add_all(
             [
                 Grid(
+                    grid_id="G01",
+                    building_id="B01",
                     grid_axis="x",
                     grid_label="1",
-                    coordinate_mm=0,
+                    grid_coord={"value": 0},
                 ),
                 Grid(
+                    grid_id="G02",
+                    building_id="B01",
                     grid_axis="x",
                     grid_label="2",
-                    coordinate_mm=4000,
+                    grid_coord={"value": 4000},
                 ),
                 Grid(
+                    grid_id="G03",
+                    building_id="B01",
                     grid_axis="y",
                     grid_label="A",
-                    coordinate_mm=0,
+                    grid_coord={"value": 0},
                 ),
                 Grid(
+                    grid_id="G04",
+                    building_id="B01",
                     grid_axis="y",
                     grid_label="B",
-                    coordinate_mm=3000,
+                    grid_coord={"value": 3000},
                 ),
             ]
         )
@@ -210,8 +225,8 @@ def seed_data() -> None:
             ]
         )
 
-    print("Seed completed: 5 dimensions, 2 materials, 2 zones,")
-    print("2 storeys, 4 grids, and 12 members inserted.")
+    print("Seed completed: 1 project, 1 building, 5 dimensions, 2 materials,")
+    print("2 zones, 2 floors, 4 grids, and 12 members inserted.")
 
 
 if __name__ == "__main__":

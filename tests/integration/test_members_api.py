@@ -2,15 +2,25 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from models import Dimension, Material, Member, Storey, Zone
+from models import Building, Dimension, Floor, Material, Member, Project, Zone
 
 pytestmark = pytest.mark.integration
 
 
 def _seed_beam(session: Session) -> None:
+    session.add(Project(project_id="P01", project_name="AISIMS pilot project"))
+    session.flush()
+    session.add(Building(building_id="B01", building_name="Tower A", project_id="P01"))
+    session.flush()
+
     session.add_all(
         [
-            Storey(storey_id="ST02", storey_name="roof level", elevation_mm=3000),
+            Floor(
+                floor_id="ST02",
+                floor_name="roof level",
+                elevation=3000,
+                building_id="B01",
+            ),
             Material(
                 material_id="K250",
                 material_name="concrete K250",
@@ -22,7 +32,7 @@ def _seed_beam(session: Session) -> None:
                 member_type="beam",
                 dim={"shape": "rectangular", "width": 150, "depth": 300},
             ),
-            Zone(zone_id="Z02", zone_name="roof beams and slab", pour_sequence=2),
+            Zone(zone_id="Z02", pour_seq=2, building_id="B01"),
         ]
     )
     session.flush()
