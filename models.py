@@ -139,6 +139,27 @@ class Grid(Base):
     )
 
 
+class Revision(Base):
+    __tablename__ = "revisions"
+
+    rev_id: Mapped[str] = mapped_column(String, primary_key=True)
+    building_id: Mapped[str] = mapped_column(
+        String, ForeignKey("buildings.building_id"), nullable=False
+    )
+    rev_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "building_id",
+            "rev_number",
+            name="uq_revisions_building_rev_number",
+        ),
+    )
+
+
 class Member(Base):
     __tablename__ = "members"
 
