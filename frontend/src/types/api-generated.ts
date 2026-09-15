@@ -38,34 +38,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/members": {
+    "/buildings/{building_id}/revisions/bulk": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Members */
-        get: operations["get_members_members_get"];
+        get?: never;
         put?: never;
-        post?: never;
+        /** Bulk Upload Revision */
+        post: operations["bulk_upload_revision_buildings__building_id__revisions_bulk_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/members/{member_id}": {
+    "/buildings/{building_id}/revisions/edit": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Member */
-        get: operations["get_member_members__member_id__get"];
+        get?: never;
         put?: never;
-        post?: never;
+        /** Edit Revision */
+        post: operations["edit_revision_buildings__building_id__revisions_edit_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -76,60 +76,83 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** BulkUploadRequest */
+        BulkUploadRequest: {
+            /** Objects */
+            objects: components["schemas"]["ObjectCreate"][];
+        };
+        /** EditRevisionRequest */
+        EditRevisionRequest: {
+            /** Changed Objects */
+            changed_objects?: components["schemas"]["ObjectCreate"][];
+            /** Deleted Stable Ids */
+            deleted_stable_ids?: string[];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /** MemberDetailResponse */
-        MemberDetailResponse: {
-            /** Member Id */
-            member_id: string;
+        /** ObjectCreate */
+        ObjectCreate: {
+            /** Is New */
+            is_new: boolean;
+            /** Obj Mark */
+            obj_mark: string;
             /**
-             * Member Type
+             * Obj Type
              * @enum {string}
              */
-            member_type: "col" | "beam" | "wall" | "slab";
-            /** Storey Id */
-            storey_id: string;
-            /** Dimension Id */
-            dimension_id: string;
-            /** Material Id */
-            material_id: string;
+            obj_type: "col" | "beam" | "wall" | "slab";
+            /** Floor Id */
+            floor_id: string;
             /** Zone Id */
             zone_id: string;
+            /** Sect Id */
+            sect_id: string;
+            /** Mat Id */
+            mat_id: string;
             /** Geometry Points */
             geometry_points: number[][];
-            /** Storey Name */
-            storey_name: string;
-            /** Material Strength Kg Cm2 */
-            material_strength_kg_cm2: number;
-            /** Dimension Section */
-            dimension_section: {
-                [key: string]: string | number;
-            };
-            /** Pour Sequence */
-            pour_sequence: number;
+            /** Reinforcements */
+            reinforcements?: components["schemas"]["ReinforcementCreate"][];
+            /** Stable Id */
+            stable_id?: string | null;
         };
-        /** MemberResponse */
-        MemberResponse: {
-            /** Member Id */
-            member_id: string;
-            /**
-             * Member Type
-             * @enum {string}
-             */
-            member_type: "col" | "beam" | "wall" | "slab";
-            /** Storey Id */
-            storey_id: string;
-            /** Dimension Id */
-            dimension_id: string;
-            /** Material Id */
-            material_id: string;
-            /** Zone Id */
-            zone_id: string;
-            /** Geometry Points */
-            geometry_points: number[][];
+        /** ReinforcementCreate */
+        ReinforcementCreate: {
+            /** Barspec Id */
+            barspec_id: string;
+            /** Bar Role */
+            bar_role: string;
+            /** Bar Count */
+            bar_count: number;
+            /** Bar Len */
+            bar_len: number;
+            /** Bar Space */
+            bar_space?: number | null;
+            /** Bar Hook Type */
+            bar_hook_type?: string | null;
+        };
+        /** RevisionObjectResult */
+        RevisionObjectResult: {
+            /** Obj Id */
+            obj_id: string;
+            /** Obj Mark */
+            obj_mark: string;
+            /** Stable Id */
+            stable_id: string;
+            /** Change Status */
+            change_status: string;
+        };
+        /** RevisionResponse */
+        RevisionResponse: {
+            /** Rev Id */
+            rev_id: string;
+            /** Rev Number */
+            rev_number: number;
+            /** Objects */
+            objects: components["schemas"]["RevisionObjectResult"][];
         };
         /** ValidationError */
         ValidationError: {
@@ -197,44 +220,63 @@ export interface operations {
             };
         };
     };
-    get_members_members_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemberResponse"][];
-                };
-            };
-        };
-    };
-    get_member_members__member_id__get: {
+    bulk_upload_revision_buildings__building_id__revisions_bulk_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                member_id: string;
+                building_id: string;
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkUploadRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MemberDetailResponse"];
+                    "application/json": components["schemas"]["RevisionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_revision_buildings__building_id__revisions_edit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionResponse"];
                 };
             };
             /** @description Validation Error */
