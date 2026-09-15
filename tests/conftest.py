@@ -45,7 +45,12 @@ def test_engine() -> Iterator[Engine]:
 def db_session(test_engine: Engine) -> Iterator[Session]:
     connection = test_engine.connect()
     transaction = connection.begin()
-    session = sessionmaker(bind=connection)()
+    # create_savepoint: endpoint code under test commits its own
+    # transaction (the revision endpoints wrap their work in a single
+    # commit); this makes that commit release a SAVEPOINT instead of the
+    # outer connection-level transaction, so the rollback below still
+    # discards everything the test wrote.
+    session = sessionmaker(bind=connection, join_transaction_mode="create_savepoint")()
 
     yield session
 
