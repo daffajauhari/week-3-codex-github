@@ -209,3 +209,31 @@ class Object(Base):
             name="ck_objects_change_status",
         ),
     )
+
+
+class Reinforcement(Base):
+    __tablename__ = "reinforcements"
+
+    bar_id: Mapped[str] = mapped_column(String, primary_key=True)
+    obj_id: Mapped[str] = mapped_column(
+        String, ForeignKey("objects.obj_id"), nullable=False
+    )
+    barspec_id: Mapped[str] = mapped_column(
+        String, ForeignKey("barspec.barspec_id"), nullable=False
+    )
+    bar_role: Mapped[str] = mapped_column(String, nullable=False)
+    bar_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    bar_len: Mapped[int] = mapped_column(Integer, nullable=False)
+    bar_space: Mapped[int | None] = mapped_column(Integer)
+    bar_hook_type: Mapped[str | None] = mapped_column(String)
+
+
+class Quantity(Base):
+    __tablename__ = "quantity"
+
+    qty_id: Mapped[str] = mapped_column(String, primary_key=True)
+    obj_id: Mapped[str] = mapped_column(
+        String, ForeignKey("objects.obj_id"), nullable=False
+    )
+    qty_sect: Mapped[int] = mapped_column(Integer, nullable=False)
+    qty_bar: Mapped[int] = mapped_column(Integer, nullable=False)
