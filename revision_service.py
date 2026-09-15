@@ -283,6 +283,84 @@ def _reinforcements_changed(
     return previous_signature != incoming_signature
 
 
+def sync_active_status(
+    session: Session, building_id: str, rev_id: str, processed_stable_ids: set[str]
+) -> list[Object]:
+    """Workflow 3: Active Status Sync (D17, D18).
+
+    Bulk Upload only (D33) - Interactive Edit handles deletion through its
+    own explicit deleted_stable_ids list instead. Runs once after every
+    object in the batch has been through Workflows 1-2. Anything present
+    in the previous revision's baseline but absent from
+    processed_stable_ids is flagged deleted, unless it was already
+    inactive - the guard against re-flagging the same deletion on every
+    later revision (D17).
+    """
+    current_revision = session.get(Revision, rev_id)
+    assert current_revision is not None
+
+    previous_revision = session.scalars(
+        select(Revision).where(
+            Revision.building_id == building_id,
+            Revision.rev_number == current_revision.rev_number - 1,
+        )
+    ).first()
+    if previous_revision is None:
+        return []
+
+    previous_objects = session.scalars(
+        select(Object).where(Object.rev_id == previous_revision.rev_id)
+    ).all()
+
+    deleted_objects: list[Object] = []
+    for previous in previous_objects:
+        if previous.stable_id in processed_stable_ids:
+            continue
+
+        identity = session.get(Identity, previous.stable_id)
+        assert identity is not None
+        if not identity.is_active:
+            continue
+
+        identity.is_active = False
+
+        deleted_object = Object(
+            obj_id=str(uuid4()),
+            obj_mark=previous.obj_mark,
+            stable_id=previous.stable_id,
+            rev_id=rev_id,
+            change_status="deleted",
+            obj_type=previous.obj_type,
+            floor_id=previous.floor_id,
+            zone_id=previous.zone_id,
+            sect_id=previous.sect_id,
+            mat_id=previous.mat_id,
+            geometry_points=previous.geometry_points,
+        )
+        session.add(deleted_object)
+
+        previous_bars = session.scalars(
+            select(Reinforcement).where(Reinforcement.obj_id == previous.obj_id)
+        ).all()
+        for bar in previous_bars:
+            session.add(
+                Reinforcement(
+                    bar_id=str(uuid4()),
+                    obj_id=deleted_object.obj_id,
+                    barspec_id=bar.barspec_id,
+                    bar_role=bar.bar_role,
+                    bar_count=bar.bar_count,
+                    bar_len=bar.bar_len,
+                    bar_space=bar.bar_space,
+                    bar_hook_type=bar.bar_hook_type,
+                )
+            )
+
+        deleted_objects.append(deleted_object)
+
+    return deleted_objects
+
+
 def _check_contextual_completeness(objects: Sequence[ObjectInput]) -> list[str]:
     problems: list[str] = []
 
