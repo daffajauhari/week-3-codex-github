@@ -1,6 +1,5 @@
 import os
 from typing import Annotated
-from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +7,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from database import engine, get_session
+from ids import REVISION_ID, next_id
 from models import Building, Object, Revision
 from revision_service import (
     ObjectInput,
@@ -128,7 +128,7 @@ def bulk_upload_revision(
         )
 
     revision = Revision(
-        rev_id=str(uuid4()),
+        rev_id=next_id(session, *REVISION_ID),
         building_id=building_id,
         rev_number=_next_rev_number(session, building_id),
     )
@@ -185,7 +185,7 @@ def edit_revision(
         )
 
     revision = Revision(
-        rev_id=str(uuid4()),
+        rev_id=next_id(session, *REVISION_ID),
         building_id=building_id,
         rev_number=_next_rev_number(session, building_id),
     )

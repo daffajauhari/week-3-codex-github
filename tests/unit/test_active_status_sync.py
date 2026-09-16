@@ -35,6 +35,7 @@ def _mock_session(
     session.get.side_effect = lambda model, _id: (
         revision if model is Revision else identity
     )
+    session.execute.return_value.scalar_one.return_value = 1
 
     scalars_results = [
         MagicMock(first=MagicMock(return_value=previous_revision)),

@@ -5,6 +5,7 @@ from uuid import uuid4
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ids import OBJECT_ID, REINFORCEMENT_ID, next_id
 from models import (
     BarSpec,
     Floor,
@@ -177,7 +178,7 @@ def determine_change_status(
             change_status = "unchanged"
 
     new_object = Object(
-        obj_id=str(uuid4()),
+        obj_id=next_id(session, *OBJECT_ID),
         obj_mark=obj_input.obj_mark,
         stable_id=assignment.stable_id,
         rev_id=rev_id,
@@ -194,7 +195,7 @@ def determine_change_status(
     for bar in obj_input.reinforcements:
         session.add(
             Reinforcement(
-                bar_id=str(uuid4()),
+                bar_id=next_id(session, *REINFORCEMENT_ID),
                 obj_id=new_object.obj_id,
                 barspec_id=bar.barspec_id,
                 bar_role=bar.bar_role,
@@ -376,7 +377,7 @@ def _duplicate_object(
     session: Session, previous: Object, rev_id: str, change_status: str
 ) -> Object:
     new_object = Object(
-        obj_id=str(uuid4()),
+        obj_id=next_id(session, *OBJECT_ID),
         obj_mark=previous.obj_mark,
         stable_id=previous.stable_id,
         rev_id=rev_id,
@@ -396,7 +397,7 @@ def _duplicate_object(
     for bar in previous_bars:
         session.add(
             Reinforcement(
-                bar_id=str(uuid4()),
+                bar_id=next_id(session, *REINFORCEMENT_ID),
                 obj_id=new_object.obj_id,
                 barspec_id=bar.barspec_id,
                 bar_role=bar.bar_role,

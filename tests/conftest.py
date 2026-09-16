@@ -5,6 +5,7 @@ import pytest
 from sqlalchemy import URL, Engine, create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
+from ids import ALL_ID_SPECS
 from models import Base
 
 TEST_POSTGRES_DB = os.environ.get("TEST_POSTGRES_DB", "week2_test_db")
@@ -31,6 +32,12 @@ def test_engine() -> Iterator[Engine]:
 
     engine = create_engine(_admin_url().set(database=TEST_POSTGRES_DB))
     Base.metadata.create_all(engine)
+    # Base.metadata.create_all() only knows about ORM-mapped tables - the
+    # sequential ID scheme's sequences live outside that metadata (created
+    # via raw SQL in a migration), so recreate them here too.
+    with engine.begin() as connection:
+        for _, sequence_name, _ in ALL_ID_SPECS:
+            connection.execute(text(f"CREATE SEQUENCE {sequence_name} START WITH 1"))
 
     yield engine
 

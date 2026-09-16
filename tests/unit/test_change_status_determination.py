@@ -57,6 +57,7 @@ def _mock_session_for_comparison(
     session.get.return_value = Revision(
         rev_id="R2", building_id="B01", rev_number=2
     )
+    session.execute.return_value.scalar_one.return_value = 1
 
     scalars_results = [
         MagicMock(first=MagicMock(return_value=Revision(rev_id="R1", building_id="B01", rev_number=1))),
@@ -143,6 +144,7 @@ def test_fully_identical_object_is_unchanged() -> None:
 
 def test_new_stable_id_is_added_without_comparison() -> None:
     session = MagicMock()
+    session.execute.return_value.scalar_one.return_value = 1
     assignment = StableIdAssignment(stable_id="new-1", is_new=True, is_restored=False)
 
     result = determine_change_status(session, _obj_input(), assignment, rev_id="R2")
@@ -153,6 +155,7 @@ def test_new_stable_id_is_added_without_comparison() -> None:
 
 def test_restored_stable_id_is_restored_without_comparison() -> None:
     session = MagicMock()
+    session.execute.return_value.scalar_one.return_value = 1
     assignment = StableIdAssignment(stable_id="abc-123", is_new=False, is_restored=True)
 
     result = determine_change_status(session, _obj_input(), assignment, rev_id="R2")
