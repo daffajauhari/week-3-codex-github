@@ -3,13 +3,13 @@ from unittest.mock import MagicMock
 import pytest
 
 from models import Identity
-from revision_service import ObjectInput, assign_stable_ids
+from revision_service import ResolvedObject, assign_stable_ids
 
 pytestmark = pytest.mark.unit
 
 
-def _column(*, is_new: bool, stable_id: str | None = None) -> ObjectInput:
-    return ObjectInput(
+def _column(*, is_new: bool, stable_id: str | None = None) -> ResolvedObject:
+    return ResolvedObject(
         is_new=is_new,
         obj_mark="C1.F01.001",
         obj_type="column",

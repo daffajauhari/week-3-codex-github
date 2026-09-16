@@ -4,7 +4,9 @@ from pydantic import BaseModel, Field, model_validator
 
 
 class ReinforcementCreate(BaseModel):
-    barspec_id: str
+    # Resolved server-side to barspec_id during the Pre-Validation Gate
+    # (D44/D45) - barspec_label is unique globally.
+    barspec_label: str
     bar_role: str
     bar_count: int
     bar_len: int
@@ -16,10 +18,16 @@ class ObjectCreate(BaseModel):
     is_new: bool
     obj_mark: str
     obj_type: Literal["column", "beam", "wall", "slab", "footing", "stair"]
-    floor_id: str
-    zone_id: str
-    sect_id: str
-    mat_id: str
+    # Natural names, not raw IDs (D44) - a structural engineer works with
+    # a floor's name or a section's label, not an opaque database ID.
+    # Resolved to floor_id/zone_id/sect_id/mat_id server-side, inside the
+    # Pre-Validation Gate: floor_name/zone_label are scoped to the
+    # building_id from the URL path, sect_label(+obj_type)/mat_name are
+    # resolved globally.
+    floor_name: str
+    zone_label: str
+    sect_label: str
+    mat_name: str
     geometry_points: list[list[int]]
     reinforcements: list[ReinforcementCreate] = Field(default_factory=list)
     # Deliberately not part of the Human Input field list D8/Commit 13

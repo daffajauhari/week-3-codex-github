@@ -4,8 +4,8 @@ import pytest
 
 from models import Object, Reinforcement, Revision
 from revision_service import (
-    ObjectInput,
-    ReinforcementInput,
+    ResolvedObject,
+    ResolvedReinforcement,
     StableIdAssignment,
     determine_change_status,
 )
@@ -33,7 +33,7 @@ def _previous_object(**overrides: object) -> Object:
     return Object(**defaults)  # type: ignore[arg-type]
 
 
-def _obj_input(**overrides: object) -> ObjectInput:
+def _obj_input(**overrides: object) -> ResolvedObject:
     defaults: dict[str, object] = {
         "is_new": False,
         "obj_mark": "C1.F01.001",
@@ -47,7 +47,7 @@ def _obj_input(**overrides: object) -> ObjectInput:
         "stable_id": "abc-123",
     }
     defaults.update(overrides)
-    return ObjectInput(**defaults)  # type: ignore[arg-type]
+    return ResolvedObject(**defaults)  # type: ignore[arg-type]
 
 
 def _mock_session_for_comparison(
@@ -97,7 +97,7 @@ def test_object_with_unchanged_columns_but_different_reinforcement_is_modified()
     )
     incoming = _obj_input(
         reinforcements=[
-            ReinforcementInput(
+            ResolvedReinforcement(
                 barspec_id="D16",
                 bar_role="longitudinal",
                 bar_count=10,  # different bar_count
@@ -128,7 +128,7 @@ def test_fully_identical_object_is_unchanged() -> None:
     )
     incoming = _obj_input(
         reinforcements=[
-            ReinforcementInput(
+            ResolvedReinforcement(
                 barspec_id="D16",
                 bar_role="longitudinal",
                 bar_count=8,

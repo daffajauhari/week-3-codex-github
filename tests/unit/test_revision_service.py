@@ -6,34 +6,27 @@ from revision_service import ObjectInput, ReinforcementInput, validate_batch
 
 pytestmark = pytest.mark.unit
 
+_BUILDING_ID = "B01"
 _RECTANGULAR_COLUMN_DIM = {"shape": "rectangular", "width": 400, "depth": 400}
 
 
 def _mock_session(
     *,
-    floor_ids: list[str],
-    zone_ids: list[str],
-    mat_ids: list[str],
-    sect_pairs: list[tuple[str, str]],
-    barspec_ids: list[str],
-    sect_dims: list[tuple[str, str, dict]] | None = None,
+    floor_names: list[tuple[str, str]],
+    zone_labels: list[tuple[str, str]],
+    mat_names: list[tuple[str, str]],
+    sect_labels: list[tuple[str, str, str, dict]],
+    barspec_labels: list[tuple[str, str]],
 ) -> MagicMock:
-    if sect_dims is None:
-        sect_dims = [
-            (sect_id, obj_type, _RECTANGULAR_COLUMN_DIM)
-            for sect_id, obj_type in sect_pairs
-        ]
-
+    """floor_names/zone_labels: [(id, name)]. sect_labels: [(sect_id,
+    sect_label, obj_type, dim)]. mat_names/barspec_labels: [(id, name)]."""
     session = MagicMock()
-    session.scalars.side_effect = [
-        MagicMock(all=MagicMock(return_value=floor_ids)),
-        MagicMock(all=MagicMock(return_value=zone_ids)),
-        MagicMock(all=MagicMock(return_value=mat_ids)),
-        MagicMock(all=MagicMock(return_value=barspec_ids)),
-    ]
     session.execute.side_effect = [
-        MagicMock(all=MagicMock(return_value=sect_pairs)),
-        MagicMock(all=MagicMock(return_value=sect_dims)),
+        MagicMock(all=MagicMock(return_value=floor_names)),
+        MagicMock(all=MagicMock(return_value=zone_labels)),
+        MagicMock(all=MagicMock(return_value=sect_labels)),
+        MagicMock(all=MagicMock(return_value=mat_names)),
+        MagicMock(all=MagicMock(return_value=barspec_labels)),
     ]
     return session
 
@@ -43,20 +36,20 @@ def _valid_column() -> ObjectInput:
         is_new=True,
         obj_mark="C1.F01.001",
         obj_type="column",
-        floor_id="F01",
-        zone_id="Z01",
-        sect_id="C1",
-        mat_id="K250",
+        floor_name="ground floor",
+        zone_label="Zone 1",
+        sect_label="C1 - 400x400 column",
+        mat_name="concrete K250",
         geometry_points=[[0, 0, 0], [0, 0, 3000]],
         reinforcements=[
             ReinforcementInput(
-                barspec_id="D16",
+                barspec_label="D16 deformed",
                 bar_role="longitudinal",
                 bar_count=8,
                 bar_len=3000,
             ),
             ReinforcementInput(
-                barspec_id="D10",
+                barspec_label="D10 deformed",
                 bar_role="transverse",
                 bar_count=20,
                 bar_len=1200,
@@ -67,40 +60,47 @@ def _valid_column() -> ObjectInput:
     )
 
 
-def test_rejects_nonexistent_floor_id() -> None:
-    session = _mock_session(
-        floor_ids=[],
-        zone_ids=["Z01"],
-        mat_ids=["K250"],
-        sect_pairs=[("C1", "column")],
-        barspec_ids=["D16", "D10"],
+def _valid_session() -> MagicMock:
+    return _mock_session(
+        floor_names=[("F01", "ground floor")],
+        zone_labels=[("Z01", "Zone 1")],
+        mat_names=[("K250", "concrete K250")],
+        sect_labels=[("C1", "C1 - 400x400 column", "column", _RECTANGULAR_COLUMN_DIM)],
+        barspec_labels=[("D16", "D16 deformed"), ("D10", "D10 deformed")],
     )
 
-    problems = validate_batch(session, [_valid_column()])
 
-    assert any("floor_id 'F01' does not exist" in problem for problem in problems)
+def test_rejects_nonexistent_floor_name() -> None:
+    session = _mock_session(
+        floor_names=[],
+        zone_labels=[("Z01", "Zone 1")],
+        mat_names=[("K250", "concrete K250")],
+        sect_labels=[("C1", "C1 - 400x400 column", "column", _RECTANGULAR_COLUMN_DIM)],
+        barspec_labels=[("D16", "D16 deformed"), ("D10", "D10 deformed")],
+    )
+
+    problems, resolved = validate_batch(session, [_valid_column()], _BUILDING_ID)
+
+    assert any(
+        "floor_name 'ground floor' does not exist" in problem for problem in problems
+    )
+    assert resolved == []
 
 
 def test_rejects_transverse_bar_missing_bar_space() -> None:
-    session = _mock_session(
-        floor_ids=["F01"],
-        zone_ids=["Z01"],
-        mat_ids=["K250"],
-        sect_pairs=[("C1", "column")],
-        barspec_ids=["D10"],
-    )
+    session = _valid_session()
     obj = ObjectInput(
         is_new=True,
         obj_mark="C1.F01.001",
         obj_type="column",
-        floor_id="F01",
-        zone_id="Z01",
-        sect_id="C1",
-        mat_id="K250",
+        floor_name="ground floor",
+        zone_label="Zone 1",
+        sect_label="C1 - 400x400 column",
+        mat_name="concrete K250",
         geometry_points=[[0, 0, 0], [0, 0, 3000]],
         reinforcements=[
             ReinforcementInput(
-                barspec_id="D10",
+                barspec_label="D10 deformed",
                 bar_role="transverse",
                 bar_count=20,
                 bar_len=1200,
@@ -109,94 +109,123 @@ def test_rejects_transverse_bar_missing_bar_space() -> None:
         ],
     )
 
-    problems = validate_batch(session, [obj])
+    problems, _resolved = validate_batch(session, [obj], _BUILDING_ID)
 
     assert any("bar_space is required" in problem for problem in problems)
 
 
 def test_rejects_column_with_three_geometry_points() -> None:
-    session = _mock_session(
-        floor_ids=["F01"],
-        zone_ids=["Z01"],
-        mat_ids=["K250"],
-        sect_pairs=[("C1", "column")],
-        barspec_ids=[],
-    )
+    session = _valid_session()
     obj = ObjectInput(
         is_new=True,
         obj_mark="C1.F01.001",
         obj_type="column",
-        floor_id="F01",
-        zone_id="Z01",
-        sect_id="C1",
-        mat_id="K250",
+        floor_name="ground floor",
+        zone_label="Zone 1",
+        sect_label="C1 - 400x400 column",
+        mat_name="concrete K250",
         geometry_points=[[0, 0, 0], [0, 0, 3000], [0, 1000, 3000]],
     )
 
-    problems = validate_batch(session, [obj])
+    problems, _resolved = validate_batch(session, [obj], _BUILDING_ID)
 
     assert any("requires exactly 2 geometry_points" in problem for problem in problems)
 
 
 def test_accepts_fully_valid_batch() -> None:
-    session = _mock_session(
-        floor_ids=["F01"],
-        zone_ids=["Z01"],
-        mat_ids=["K250"],
-        sect_pairs=[("C1", "column")],
-        barspec_ids=["D16", "D10"],
-    )
+    session = _valid_session()
 
-    problems = validate_batch(session, [_valid_column()])
+    problems, resolved = validate_batch(session, [_valid_column()], _BUILDING_ID)
 
     assert problems == []
+    assert len(resolved) == 1
+    assert resolved[0].floor_id == "F01"
+    assert resolved[0].zone_id == "Z01"
+    assert resolved[0].sect_id == "C1"
+    assert resolved[0].mat_id == "K250"
+    assert [bar.barspec_id for bar in resolved[0].reinforcements] == ["D16", "D10"]
 
 
 def test_rejects_circular_section_missing_diameter() -> None:
     session = _mock_session(
-        floor_ids=["F01"],
-        zone_ids=["Z01"],
-        mat_ids=["K250"],
-        sect_pairs=[("C2", "column")],
-        barspec_ids=[],
-        sect_dims=[("C2", "column", {"shape": "circular"})],
+        floor_names=[("F01", "ground floor")],
+        zone_labels=[("Z01", "Zone 1")],
+        mat_names=[("K250", "concrete K250")],
+        sect_labels=[("C2", "C2 - circular column", "column", {"shape": "circular"})],
+        barspec_labels=[],
     )
     obj = ObjectInput(
         is_new=True,
         obj_mark="C2.F01.001",
         obj_type="column",
-        floor_id="F01",
-        zone_id="Z01",
-        sect_id="C2",
-        mat_id="K250",
+        floor_name="ground floor",
+        zone_label="Zone 1",
+        sect_label="C2 - circular column",
+        mat_name="concrete K250",
         geometry_points=[[0, 0, 0], [0, 0, 3000]],
     )
 
-    problems = validate_batch(session, [obj])
+    problems, resolved = validate_batch(session, [obj], _BUILDING_ID)
 
     assert any("requires diameter > 0" in problem for problem in problems)
+    assert resolved == []
 
 
 def test_accepts_circular_section_with_valid_diameter() -> None:
     session = _mock_session(
-        floor_ids=["F01"],
-        zone_ids=["Z01"],
-        mat_ids=["K250"],
-        sect_pairs=[("C2", "column")],
-        barspec_ids=[],
-        sect_dims=[("C2", "column", {"shape": "circular", "diameter": 350})],
+        floor_names=[("F01", "ground floor")],
+        zone_labels=[("Z01", "Zone 1")],
+        mat_names=[("K250", "concrete K250")],
+        sect_labels=[
+            (
+                "C2",
+                "C2 - circular column",
+                "column",
+                {"shape": "circular", "diameter": 350},
+            )
+        ],
+        barspec_labels=[],
     )
     obj = ObjectInput(
         is_new=True,
         obj_mark="C2.F01.001",
         obj_type="column",
-        floor_id="F01",
-        zone_id="Z01",
-        sect_id="C2",
-        mat_id="K250",
+        floor_name="ground floor",
+        zone_label="Zone 1",
+        sect_label="C2 - circular column",
+        mat_name="concrete K250",
         geometry_points=[[0, 0, 0], [0, 0, 3000]],
     )
 
-    problems = validate_batch(session, [obj])
+    problems, resolved = validate_batch(session, [obj], _BUILDING_ID)
 
     assert problems == []
+    assert resolved[0].sect_id == "C2"
+
+
+def test_rejects_sect_label_with_mismatched_obj_type() -> None:
+    session = _mock_session(
+        floor_names=[("F01", "ground floor")],
+        zone_labels=[("Z01", "Zone 1")],
+        mat_names=[("K250", "concrete K250")],
+        sect_labels=[("C1", "C1 - 400x400 column", "column", _RECTANGULAR_COLUMN_DIM)],
+        barspec_labels=[],
+    )
+    obj = ObjectInput(
+        is_new=True,
+        obj_mark="C1.F01.001",
+        obj_type="beam",  # C1's actual obj_type is "column"
+        floor_name="ground floor",
+        zone_label="Zone 1",
+        sect_label="C1 - 400x400 column",
+        mat_name="concrete K250",
+        geometry_points=[[0, 0, 0], [0, 0, 3000]],
+    )
+
+    problems, resolved = validate_batch(session, [obj], _BUILDING_ID)
+
+    assert any(
+        "sect_label='C1 - 400x400 column'" in problem and "does not exist" in problem
+        for problem in problems
+    )
+    assert resolved == []

@@ -62,14 +62,14 @@ def _to_object_input(payload: ObjectCreate) -> ObjectInput:
         is_new=payload.is_new,
         obj_mark=payload.obj_mark,
         obj_type=payload.obj_type,
-        floor_id=payload.floor_id,
-        zone_id=payload.zone_id,
-        sect_id=payload.sect_id,
-        mat_id=payload.mat_id,
+        floor_name=payload.floor_name,
+        zone_label=payload.zone_label,
+        sect_label=payload.sect_label,
+        mat_name=payload.mat_name,
         geometry_points=payload.geometry_points,
         reinforcements=[
             ReinforcementInput(
-                barspec_id=bar.barspec_id,
+                barspec_label=bar.barspec_label,
                 bar_role=bar.bar_role,
                 bar_count=bar.bar_count,
                 bar_len=bar.bar_len,
@@ -121,7 +121,7 @@ def bulk_upload_revision(
 
     object_inputs = [_to_object_input(obj) for obj in payload.objects]
 
-    problems = validate_batch(session, object_inputs)
+    problems, resolved_objects = validate_batch(session, object_inputs, building_id)
     if problems:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=problems
@@ -135,11 +135,11 @@ def bulk_upload_revision(
     session.add(revision)
     session.flush()
 
-    assignments = assign_stable_ids(session, object_inputs)
+    assignments = assign_stable_ids(session, resolved_objects)
 
     results: list[RevisionObjectResult] = []
     processed_stable_ids: set[str] = set()
-    for obj_input, assignment in zip(object_inputs, assignments, strict=True):
+    for obj_input, assignment in zip(resolved_objects, assignments, strict=True):
         new_object = determine_change_status(
             session, obj_input, assignment, revision.rev_id
         )
@@ -178,7 +178,7 @@ def edit_revision(
     # new Human Input to validate.
     changed_inputs = [_to_object_input(obj) for obj in payload.changed_objects]
 
-    problems = validate_batch(session, changed_inputs)
+    problems, resolved_objects = validate_batch(session, changed_inputs, building_id)
     if problems:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=problems
@@ -192,11 +192,11 @@ def edit_revision(
     session.add(revision)
     session.flush()
 
-    assignments = assign_stable_ids(session, changed_inputs)
+    assignments = assign_stable_ids(session, resolved_objects)
 
     results: list[RevisionObjectResult] = []
     touched_stable_ids: set[str] = set(payload.deleted_stable_ids)
-    for obj_input, assignment in zip(changed_inputs, assignments, strict=True):
+    for obj_input, assignment in zip(resolved_objects, assignments, strict=True):
         new_object = determine_change_status(
             session, obj_input, assignment, revision.rev_id
         )

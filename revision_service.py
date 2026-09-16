@@ -25,7 +25,7 @@ _TRANSVERSE_ROLE = "transverse"
 
 @dataclass
 class ReinforcementInput:
-    barspec_id: str
+    barspec_label: str
     bar_role: str
     bar_count: int
     bar_len: int
@@ -35,13 +35,17 @@ class ReinforcementInput:
 
 @dataclass
 class ObjectInput:
+    """Client-facing shape (D44): every Project Configuration reference is
+    a natural name, not a raw ID. validate_batch resolves these to real
+    IDs, producing a ResolvedObject for Workflows 1-3 to consume."""
+
     is_new: bool
     obj_mark: str
     obj_type: str
-    floor_id: str
-    zone_id: str
-    sect_id: str
-    mat_id: str
+    floor_name: str
+    zone_label: str
+    sect_label: str
+    mat_name: str
     geometry_points: list[list[int]]
     reinforcements: list[ReinforcementInput] = field(default_factory=list)
     # Not part of the client-facing input schema for new objects (D6/D7: a
@@ -50,54 +54,180 @@ class ObjectInput:
     stable_id: str | None = None
 
 
-def validate_batch(session: Session, objects: Sequence[ObjectInput]) -> list[str]:
-    """Pre-Validation Gate (D29).
+@dataclass
+class ResolvedReinforcement:
+    barspec_id: str
+    bar_role: str
+    bar_count: int
+    bar_len: int
+    bar_space: int | None = None
+    bar_hook_type: str | None = None
 
-    Runs Referential Existence then Contextual Completeness against the
-    whole batch and returns every problem found - never just the first -
-    so the caller can reject the batch with a complete list.
+
+@dataclass
+class ResolvedObject:
+    """Same data as ObjectInput, but every Project Configuration reference
+    is the real ID it resolved to (D44) - what Workflows 1-3 actually
+    store on Object/Reinforcement rows."""
+
+    is_new: bool
+    obj_mark: str
+    obj_type: str
+    floor_id: str
+    zone_id: str
+    sect_id: str
+    mat_id: str
+    geometry_points: list[list[int]]
+    reinforcements: list[ResolvedReinforcement] = field(default_factory=list)
+    stable_id: str | None = None
+
+
+@dataclass
+class _SectionLookup:
+    sect_id: str
+    obj_type: str
+    dim: dict[str, str | int]
+
+
+@dataclass
+class _Resolution:
+    floor_by_name: dict[str, str]
+    zone_by_label: dict[str, str]
+    section_by_label: dict[str, _SectionLookup]
+    mat_by_name: dict[str, str]
+    barspec_by_label: dict[str, str]
+
+
+def validate_batch(
+    session: Session, objects: Sequence[ObjectInput], building_id: str
+) -> tuple[list[str], list[ResolvedObject]]:
+    """Pre-Validation Gate (D32).
+
+    Resolves every natural-name reference (floor_name/zone_label scoped to
+    building_id, sect_label+obj_type/mat_name/barspec_label globally -
+    D44), then runs Contextual Completeness. Returns every problem found -
+    never just the first - plus the resolved objects. The resolved list is
+    only meaningful when there are no problems; the caller should reject
+    the whole batch rather than act on a partial resolution.
     """
-    problems = _check_referential_existence(session, objects)
-    problems.extend(_check_contextual_completeness(session, objects))
-    return problems
+    ref_problems, resolution = _resolve_referential_existence(
+        session, objects, building_id
+    )
+    problems = ref_problems + _check_contextual_completeness(objects, resolution)
+
+    if problems:
+        return problems, []
+    return problems, _build_resolved_objects(objects, resolution)
 
 
-def _check_referential_existence(
-    session: Session, objects: Sequence[ObjectInput]
-) -> list[str]:
+def _resolve_referential_existence(
+    session: Session, objects: Sequence[ObjectInput], building_id: str
+) -> tuple[list[str], _Resolution]:
     problems: list[str] = []
 
-    floor_ids = {obj.floor_id for obj in objects}
-    zone_ids = {obj.zone_id for obj in objects}
-    mat_ids = {obj.mat_id for obj in objects}
-    sect_pairs = {(obj.sect_id, obj.obj_type) for obj in objects}
-    barspec_ids = {bar.barspec_id for obj in objects for bar in obj.reinforcements}
+    floor_names = {obj.floor_name for obj in objects}
+    zone_labels = {obj.zone_label for obj in objects}
+    sect_pairs = {(obj.sect_label, obj.obj_type) for obj in objects}
+    mat_names = {obj.mat_name for obj in objects}
+    barspec_labels = {
+        bar.barspec_label for obj in objects for bar in obj.reinforcements
+    }
 
-    existing_floor_ids = set(session.scalars(select(Floor.floor_id)).all())
-    existing_zone_ids = set(session.scalars(select(Zone.zone_id)).all())
-    existing_mat_ids = set(session.scalars(select(Material.mat_id)).all())
-    existing_sect_pairs = {
-        (sect_id, obj_type)
-        for sect_id, obj_type in session.execute(
-            select(Section.sect_id, Section.obj_type)
+    # floor_name/zone_label are scoped to this building (D44) - a name that
+    # exists in a different building must not resolve here.
+    floor_by_name = {
+        floor_name: floor_id
+        for floor_id, floor_name in session.execute(
+            select(Floor.floor_id, Floor.floor_name).where(
+                Floor.building_id == building_id
+            )
         ).all()
     }
-    existing_barspec_ids = set(session.scalars(select(BarSpec.barspec_id)).all())
+    zone_by_label = {
+        zone_label: zone_id
+        for zone_id, zone_label in session.execute(
+            select(Zone.zone_id, Zone.zone_label).where(
+                Zone.building_id == building_id
+            )
+        ).all()
+    }
+    # sect_label/mat_name/barspec_label have no building scope - resolved
+    # globally.
+    section_by_label = {
+        sect_label: _SectionLookup(sect_id=sect_id, obj_type=obj_type, dim=dim)
+        for sect_id, sect_label, obj_type, dim in session.execute(
+            select(Section.sect_id, Section.sect_label, Section.obj_type, Section.dim)
+        ).all()
+    }
+    mat_by_name = {
+        mat_name: mat_id
+        for mat_id, mat_name in session.execute(
+            select(Material.mat_id, Material.mat_name)
+        ).all()
+    }
+    barspec_by_label = {
+        barspec_label: barspec_id
+        for barspec_id, barspec_label in session.execute(
+            select(BarSpec.barspec_id, BarSpec.barspec_label)
+        ).all()
+    }
 
-    for floor_id in sorted(floor_ids - existing_floor_ids):
-        problems.append(f"floor_id '{floor_id}' does not exist")
-    for zone_id in sorted(zone_ids - existing_zone_ids):
-        problems.append(f"zone_id '{zone_id}' does not exist")
-    for mat_id in sorted(mat_ids - existing_mat_ids):
-        problems.append(f"mat_id '{mat_id}' does not exist")
-    for sect_id, obj_type in sorted(sect_pairs - existing_sect_pairs):
-        problems.append(
-            f"section (sect_id='{sect_id}', obj_type='{obj_type}') does not exist"
+    for floor_name in sorted(floor_names - floor_by_name.keys()):
+        problems.append(f"floor_name '{floor_name}' does not exist")
+    for zone_label in sorted(zone_labels - zone_by_label.keys()):
+        problems.append(f"zone_label '{zone_label}' does not exist")
+    for mat_name in sorted(mat_names - mat_by_name.keys()):
+        problems.append(f"mat_name '{mat_name}' does not exist")
+    for barspec_label in sorted(barspec_labels - barspec_by_label.keys()):
+        problems.append(f"barspec_label '{barspec_label}' does not exist")
+    for sect_label, obj_type in sorted(sect_pairs):
+        section = section_by_label.get(sect_label)
+        if section is None or section.obj_type != obj_type:
+            problems.append(
+                f"section (sect_label='{sect_label}', obj_type='{obj_type}') "
+                "does not exist"
+            )
+
+    return problems, _Resolution(
+        floor_by_name=floor_by_name,
+        zone_by_label=zone_by_label,
+        section_by_label=section_by_label,
+        mat_by_name=mat_by_name,
+        barspec_by_label=barspec_by_label,
+    )
+
+
+def _build_resolved_objects(
+    objects: Sequence[ObjectInput], resolution: _Resolution
+) -> list[ResolvedObject]:
+    resolved_objects: list[ResolvedObject] = []
+    for obj in objects:
+        section = resolution.section_by_label[obj.sect_label]
+        resolved_objects.append(
+            ResolvedObject(
+                is_new=obj.is_new,
+                obj_mark=obj.obj_mark,
+                obj_type=obj.obj_type,
+                floor_id=resolution.floor_by_name[obj.floor_name],
+                zone_id=resolution.zone_by_label[obj.zone_label],
+                sect_id=section.sect_id,
+                mat_id=resolution.mat_by_name[obj.mat_name],
+                geometry_points=obj.geometry_points,
+                reinforcements=[
+                    ResolvedReinforcement(
+                        barspec_id=resolution.barspec_by_label[bar.barspec_label],
+                        bar_role=bar.bar_role,
+                        bar_count=bar.bar_count,
+                        bar_len=bar.bar_len,
+                        bar_space=bar.bar_space,
+                        bar_hook_type=bar.bar_hook_type,
+                    )
+                    for bar in obj.reinforcements
+                ],
+                stable_id=obj.stable_id,
+            )
         )
-    for barspec_id in sorted(barspec_ids - existing_barspec_ids):
-        problems.append(f"barspec_id '{barspec_id}' does not exist")
-
-    return problems
+    return resolved_objects
 
 
 @dataclass
@@ -108,7 +238,7 @@ class StableIdAssignment:
 
 
 def assign_stable_ids(
-    session: Session, objects: Sequence[ObjectInput]
+    session: Session, objects: Sequence[ResolvedObject]
 ) -> list[StableIdAssignment]:
     """Workflow 1: Stable ID Assignment (D18).
 
@@ -155,7 +285,7 @@ def assign_stable_ids(
 
 def determine_change_status(
     session: Session,
-    obj_input: ObjectInput,
+    obj_input: ResolvedObject,
     assignment: StableIdAssignment,
     rev_id: str,
 ) -> Object:
@@ -232,7 +362,9 @@ def _get_previous_object(
     ).first()
 
 
-def _has_changed(session: Session, previous: Object, obj_input: ObjectInput) -> bool:
+def _has_changed(
+    session: Session, previous: Object, obj_input: ResolvedObject
+) -> bool:
     own_columns_changed = (
         previous.obj_type != obj_input.obj_type
         or previous.floor_id != obj_input.floor_id
@@ -245,7 +377,7 @@ def _has_changed(session: Session, previous: Object, obj_input: ObjectInput) -> 
 
 
 def _reinforcement_signature(
-    bar: Reinforcement | ReinforcementInput,
+    bar: Reinforcement | ResolvedReinforcement,
 ) -> tuple[str, str, int, int, int, str]:
     # bar_space/bar_hook_type are optional (VR-06); normalize None to a
     # sentinel outside the real value range so tuples stay sortable without
@@ -261,7 +393,7 @@ def _reinforcement_signature(
 
 
 def _reinforcements_changed(
-    session: Session, previous: Object, obj_input: ObjectInput
+    session: Session, previous: Object, obj_input: ResolvedObject
 ) -> bool:
     previous_bars = session.scalars(
         select(Reinforcement).where(Reinforcement.obj_id == previous.obj_id)
@@ -412,16 +544,9 @@ def _duplicate_object(
 
 
 def _check_contextual_completeness(
-    session: Session, objects: Sequence[ObjectInput]
+    objects: Sequence[ObjectInput], resolution: _Resolution
 ) -> list[str]:
     problems: list[str] = []
-
-    dims_by_sect_pair = {
-        (sect_id, obj_type): dim
-        for sect_id, obj_type, dim in session.execute(
-            select(Section.sect_id, Section.obj_type, Section.dim)
-        ).all()
-    }
 
     for index, obj in enumerate(objects):
         point_count = len(obj.geometry_points)
@@ -436,11 +561,11 @@ def _check_contextual_completeness(
                 f"requires at least 3 geometry_points, got {point_count}"
             )
 
-        # Referential Existence already reports a missing (sect_id, obj_type)
-        # pair - only check shape when the section actually resolved.
-        dim = dims_by_sect_pair.get((obj.sect_id, obj.obj_type))
-        if dim is not None:
-            problems.extend(_check_dimension_shape(index, obj, dim))
+        # Referential Existence already reports a missing/mismatched
+        # section - only check shape when it actually resolved.
+        section = resolution.section_by_label.get(obj.sect_label)
+        if section is not None and section.obj_type == obj.obj_type:
+            problems.extend(_check_dimension_shape(index, obj, section.dim))
 
         for bar_index, bar in enumerate(obj.reinforcements):
             if bar.bar_role != _TRANSVERSE_ROLE:
