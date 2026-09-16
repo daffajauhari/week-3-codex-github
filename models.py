@@ -23,7 +23,7 @@ class Project(Base):
     __tablename__ = "projects"
 
     project_id: Mapped[str] = mapped_column(String, primary_key=True)
-    project_name: Mapped[str | None] = mapped_column(String)
+    project_name: Mapped[str | None] = mapped_column(String, unique=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )
@@ -33,7 +33,7 @@ class Building(Base):
     __tablename__ = "buildings"
 
     building_id: Mapped[str] = mapped_column(String, primary_key=True)
-    building_name: Mapped[str | None] = mapped_column(String)
+    building_name: Mapped[str | None] = mapped_column(String, unique=True)
     project_id: Mapped[str] = mapped_column(
         String, ForeignKey("projects.project_id"), nullable=False
     )
@@ -46,6 +46,7 @@ class Section(Base):
     __tablename__ = "sections"
 
     sect_id: Mapped[str] = mapped_column(String, primary_key=True)
+    sect_label: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     obj_type: Mapped[str] = mapped_column(String)
     dim: Mapped[dict[str, str | int]] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(
@@ -70,9 +71,10 @@ class Material(Base):
     __tablename__ = "materials"
 
     mat_id: Mapped[str] = mapped_column(String, primary_key=True)
-    mat_name: Mapped[str] = mapped_column(String)
+    mat_name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     mat_type: Mapped[str] = mapped_column(String)
     mat_strength: Mapped[int] = mapped_column(Integer)
+    mat_weight: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )
@@ -82,9 +84,11 @@ class BarSpec(Base):
     __tablename__ = "barspec"
 
     barspec_id: Mapped[str] = mapped_column(String, primary_key=True)
+    barspec_label: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     barspec_dia: Mapped[int] = mapped_column(Integer, nullable=False)
     barspec_type: Mapped[str] = mapped_column(String, nullable=False)
     barspec_grade: Mapped[str] = mapped_column(String, nullable=False)
+    barspec_weight: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )
@@ -94,12 +98,21 @@ class Zone(Base):
     __tablename__ = "zones"
 
     zone_id: Mapped[str] = mapped_column(String, primary_key=True)
+    zone_label: Mapped[str] = mapped_column(String, nullable=False)
     pour_seq: Mapped[int] = mapped_column(Integer, nullable=False)
     building_id: Mapped[str] = mapped_column(
         String, ForeignKey("buildings.building_id"), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "building_id",
+            "zone_label",
+            name="uq_zones_building_label",
+        ),
     )
 
 
@@ -114,6 +127,14 @@ class Floor(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "building_id",
+            "floor_name",
+            name="uq_floors_building_name",
+        ),
     )
 
 

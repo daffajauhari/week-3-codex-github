@@ -15,13 +15,20 @@ def _seed_project_config(session: Session) -> None:
     session.add_all(
         [
             Floor(floor_id="F01", floor_name="ground", elevation=0, building_id="B01"),
-            Zone(zone_id="Z01", pour_seq=1, building_id="B01"),
+            Zone(zone_id="Z01", zone_label="Zone 1", pour_seq=1, building_id="B01"),
             Section(
                 sect_id="C1",
+                sect_label="C1 - 400x400 column",
                 obj_type="column",
                 dim={"shape": "rectangular", "width": 400, "depth": 400},
             ),
-            Material(mat_id="K250", mat_name="concrete K250", mat_type="concrete", mat_strength=250),
+            Material(
+                mat_id="K250",
+                mat_name="concrete K250",
+                mat_type="concrete",
+                mat_strength=250,
+                mat_weight=2400,
+            ),
         ]
     )
     session.flush()

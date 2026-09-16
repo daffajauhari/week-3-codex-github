@@ -27,41 +27,49 @@ def seed_data() -> None:
             [
                 Section(
                     sect_id="C1",
+                    sect_label="C1 - 400x400 column",
                     obj_type="column",
                     dim={"shape": "rectangular", "width": 400, "depth": 400},
                 ),
                 Section(
                     sect_id="C2",
+                    sect_label="C2 - Ø350 column",
                     obj_type="column",
                     dim={"shape": "circular", "diameter": 350},
                 ),
                 Section(
                     sect_id="C3",
+                    sect_label="C3 - 300x300 column",
                     obj_type="column",
                     dim={"shape": "rectangular", "width": 300, "depth": 300},
                 ),
                 Section(
                     sect_id="B1",
+                    sect_label="B1 - 250x500 beam",
                     obj_type="beam",
                     dim={"shape": "rectangular", "width": 250, "depth": 500},
                 ),
                 Section(
                     sect_id="B2",
+                    sect_label="B2 - 200x400 beam",
                     obj_type="beam",
                     dim={"shape": "rectangular", "width": 200, "depth": 400},
                 ),
                 Section(
                     sect_id="W1",
+                    sect_label="W1 - 200mm wall",
                     obj_type="wall",
                     dim={"thickness": 200},
                 ),
                 Section(
                     sect_id="S1",
+                    sect_label="S1 - 120mm slab",
                     obj_type="slab",
                     dim={"thickness": 120},
                 ),
                 Section(
                     sect_id="S2",
+                    sect_label="S2 - 150mm slab",
                     obj_type="slab",
                     dim={"thickness": 150},
                 ),
@@ -75,18 +83,21 @@ def seed_data() -> None:
                     mat_name="concrete K250",
                     mat_type="concrete",
                     mat_strength=250,
+                    mat_weight=2400,
                 ),
                 Material(
                     mat_id="K300",
                     mat_name="concrete K300",
                     mat_type="concrete",
                     mat_strength=300,
+                    mat_weight=2400,
                 ),
                 Material(
                     mat_id="K350",
                     mat_name="concrete K350",
                     mat_type="concrete",
                     mat_strength=350,
+                    mat_weight=2400,
                 ),
             ]
         )
@@ -95,48 +106,60 @@ def seed_data() -> None:
             [
                 BarSpec(
                     barspec_id="D10",
+                    barspec_label="D10 deformed BjTS 420",
                     barspec_dia=10,
                     barspec_type="deformed",
                     barspec_grade="BjTS 420",
+                    barspec_weight=7850,
                 ),
                 BarSpec(
                     barspec_id="D13",
+                    barspec_label="D13 deformed BjTS 420",
                     barspec_dia=13,
                     barspec_type="deformed",
                     barspec_grade="BjTS 420",
+                    barspec_weight=7850,
                 ),
                 BarSpec(
                     barspec_id="D16",
+                    barspec_label="D16 deformed BjTS 420",
                     barspec_dia=16,
                     barspec_type="deformed",
                     barspec_grade="BjTS 420",
+                    barspec_weight=7850,
                 ),
                 BarSpec(
                     barspec_id="D19",
+                    barspec_label="D19 deformed BjTS 420",
                     barspec_dia=19,
                     barspec_type="deformed",
                     barspec_grade="BjTS 420",
+                    barspec_weight=7850,
                 ),
                 BarSpec(
                     barspec_id="D22",
+                    barspec_label="D22 deformed BjTS 420",
                     barspec_dia=22,
                     barspec_type="deformed",
                     barspec_grade="BjTS 420",
+                    barspec_weight=7850,
                 ),
                 BarSpec(
                     barspec_id="P8",
+                    barspec_label="P8 plain BjTP 280",
                     barspec_dia=8,
                     barspec_type="plain",
                     barspec_grade="BjTP 280",
+                    barspec_weight=7850,
                 ),
             ]
         )
 
         session.add_all(
             [
-                Zone(zone_id="Z01", pour_seq=1, building_id="B01"),
-                Zone(zone_id="Z02", pour_seq=2, building_id="B01"),
-                Zone(zone_id="Z03", pour_seq=3, building_id="B01"),
+                Zone(zone_id="Z01", zone_label="Zone 1", pour_seq=1, building_id="B01"),
+                Zone(zone_id="Z02", zone_label="Zone 2", pour_seq=2, building_id="B01"),
+                Zone(zone_id="Z03", zone_label="Zone 3", pour_seq=3, building_id="B01"),
             ]
         )
 
