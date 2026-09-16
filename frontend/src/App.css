@@ -166,8 +166,8 @@ tbody tr.is-selected {
   flex-shrink: 0;
 }
 
-.type-col {
-  --type-dot: var(--type-col);
+.type-column {
+  --type-dot: var(--type-column);
 }
 .type-beam {
   --type-dot: var(--type-beam);
@@ -177,6 +177,82 @@ tbody tr.is-selected {
 }
 .type-slab {
   --type-dot: var(--type-slab);
+}
+.type-footing {
+  --type-dot: var(--type-footing);
+}
+.type-stair {
+  --type-dot: var(--type-stair);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  text-transform: capitalize;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--status-bg, var(--code-bg));
+  color: var(--status-dot, var(--text));
+}
+
+.status-added {
+  --status-dot: var(--status-added);
+  --status-bg: color-mix(in srgb, var(--status-added) 14%, transparent);
+}
+.status-modified {
+  --status-dot: var(--status-modified);
+  --status-bg: color-mix(in srgb, var(--status-modified) 14%, transparent);
+}
+.status-unchanged {
+  --status-dot: var(--status-unchanged);
+  --status-bg: color-mix(in srgb, var(--status-unchanged) 14%, transparent);
+}
+.status-deleted {
+  --status-dot: var(--status-deleted);
+  --status-bg: color-mix(in srgb, var(--status-deleted) 14%, transparent);
+}
+.status-restored {
+  --status-dot: var(--status-restored);
+  --status-bg: color-mix(in srgb, var(--status-restored) 14%, transparent);
+}
+
+.mono-cell {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.selectors-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.selector {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+.selector select {
+  font: 14px/1 var(--sans);
+  color: var(--text-h);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-width: 180px;
+}
+
+.selector select:disabled {
+  opacity: 0.5;
 }
 
 .detail-empty {
