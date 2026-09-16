@@ -28,6 +28,8 @@ from models import (
     Material,
     Object,
     Project,
+    Quantity,
+    Reinforcement,
     Revision,
     Section,
     Zone,
@@ -57,8 +59,13 @@ from schemas import (
     MaterialCreate,
     MaterialResponse,
     ObjectCreate,
+    ObjectDetail,
+    ObjectListItem,
     ProjectCreate,
     ProjectResponse,
+    QuantityDetail,
+    ReinforcementDetail,
+    RevisionListItem,
     RevisionObjectResult,
     RevisionResponse,
     SectionCreate,
@@ -473,3 +480,203 @@ def create_barspec(
     session.add(barspec)
     _commit_or_conflict(session, "barspec_label already exists")
     return BarSpecResponse.model_validate(barspec)
+
+
+# --- Browsing (Commit 23, D39) -------------------------------------------
+#
+# Project -> Building -> Revision -> Object, list/detail responses resolve
+# foreign keys to their descriptive values rather than bare IDs.
+
+
+def _require_revision_in_building(
+    session: Session, building_id: str, rev_id: str
+) -> Revision:
+    revision = session.get(Revision, rev_id)
+    if revision is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Revision not found"
+        )
+    if revision.building_id != building_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Revision does not belong to this building",
+        )
+    return revision
+
+
+def _require_object_in_revision(session: Session, rev_id: str, obj_id: str) -> Object:
+    obj = session.get(Object, obj_id)
+    if obj is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Object not found"
+        )
+    if obj.rev_id != rev_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Object does not belong to this revision",
+        )
+    return obj
+
+
+@app.get("/projects", response_model=list[ProjectResponse])
+def list_projects(
+    session: Annotated[Session, Depends(get_session)],
+) -> list[ProjectResponse]:
+    projects = session.scalars(select(Project).order_by(Project.project_id)).all()
+    return [ProjectResponse.model_validate(project) for project in projects]
+
+
+@app.get(
+    "/projects/{project_id}/buildings", response_model=list[BuildingResponse]
+)
+def list_buildings(
+    project_id: str, session: Annotated[Session, Depends(get_session)]
+) -> list[BuildingResponse]:
+    _require_project(session, project_id)
+    buildings = session.scalars(
+        select(Building)
+        .where(Building.project_id == project_id)
+        .order_by(Building.building_id)
+    ).all()
+    return [BuildingResponse.model_validate(building) for building in buildings]
+
+
+@app.get(
+    "/projects/{project_id}/buildings/{building_id}/revisions",
+    response_model=list[RevisionListItem],
+)
+def list_revisions(
+    project_id: str,
+    building_id: str,
+    session: Annotated[Session, Depends(get_session)],
+) -> list[RevisionListItem]:
+    _require_building_in_project(session, project_id, building_id)
+    revisions = session.scalars(
+        select(Revision)
+        .where(Revision.building_id == building_id)
+        .order_by(Revision.rev_number)
+    ).all()
+    return [RevisionListItem.model_validate(revision) for revision in revisions]
+
+
+@app.get(
+    "/projects/{project_id}/buildings/{building_id}/revisions/{rev_id}/objects",
+    response_model=list[ObjectListItem],
+)
+def list_objects(
+    project_id: str,
+    building_id: str,
+    rev_id: str,
+    session: Annotated[Session, Depends(get_session)],
+) -> list[ObjectListItem]:
+    _require_building_in_project(session, project_id, building_id)
+    _require_revision_in_building(session, building_id, rev_id)
+
+    objects = session.scalars(
+        select(Object).where(Object.rev_id == rev_id).order_by(Object.obj_mark)
+    ).all()
+
+    floor_names = {
+        floor.floor_id: floor.floor_name for floor in session.scalars(select(Floor)).all()
+    }
+    zone_labels = {
+        zone.zone_id: zone.zone_label for zone in session.scalars(select(Zone)).all()
+    }
+    sect_labels = {
+        (section.sect_id, section.obj_type): section.sect_label
+        for section in session.scalars(select(Section)).all()
+    }
+    mat_names = {
+        material.mat_id: material.mat_name
+        for material in session.scalars(select(Material)).all()
+    }
+
+    return [
+        ObjectListItem(
+            obj_id=obj.obj_id,
+            obj_mark=obj.obj_mark,
+            stable_id=obj.stable_id,
+            obj_type=obj.obj_type,
+            change_status=obj.change_status,
+            floor_name=floor_names.get(obj.floor_id, obj.floor_id),
+            zone_label=zone_labels.get(obj.zone_id, obj.zone_id),
+            sect_label=sect_labels.get((obj.sect_id, obj.obj_type), obj.sect_id),
+            mat_name=mat_names.get(obj.mat_id, obj.mat_id),
+        )
+        for obj in objects
+    ]
+
+
+@app.get(
+    "/projects/{project_id}/buildings/{building_id}/revisions/{rev_id}/objects/{obj_id}",
+    response_model=ObjectDetail,
+)
+def get_object_detail(
+    project_id: str,
+    building_id: str,
+    rev_id: str,
+    obj_id: str,
+    session: Annotated[Session, Depends(get_session)],
+) -> ObjectDetail:
+    _require_building_in_project(session, project_id, building_id)
+    _require_revision_in_building(session, building_id, rev_id)
+    obj = _require_object_in_revision(session, rev_id, obj_id)
+
+    floor = session.get(Floor, obj.floor_id)
+    zone = session.get(Zone, obj.zone_id)
+    section = session.scalars(
+        select(Section).where(
+            Section.sect_id == obj.sect_id, Section.obj_type == obj.obj_type
+        )
+    ).first()
+    material = session.get(Material, obj.mat_id)
+    assert floor is not None
+    assert zone is not None
+    assert section is not None
+    assert material is not None
+
+    bars = session.scalars(
+        select(Reinforcement).where(Reinforcement.obj_id == obj.obj_id)
+    ).all()
+    barspec_by_id = {
+        barspec.barspec_id: barspec for barspec in session.scalars(select(BarSpec)).all()
+    }
+    reinforcements = [
+        ReinforcementDetail(
+            bar_id=bar.bar_id,
+            barspec_label=barspec_by_id[bar.barspec_id].barspec_label,
+            barspec_dia=barspec_by_id[bar.barspec_id].barspec_dia,
+            barspec_grade=barspec_by_id[bar.barspec_id].barspec_grade,
+            bar_role=bar.bar_role,
+            bar_count=bar.bar_count,
+            bar_len=bar.bar_len,
+            bar_space=bar.bar_space,
+            bar_hook_type=bar.bar_hook_type,
+        )
+        for bar in bars
+    ]
+
+    quantity_row = session.scalars(
+        select(Quantity).where(Quantity.obj_id == obj.obj_id)
+    ).first()
+    quantity = (
+        QuantityDetail(qty_sect=quantity_row.qty_sect, qty_bar=quantity_row.qty_bar)
+        if quantity_row is not None
+        else None
+    )
+
+    return ObjectDetail(
+        obj_id=obj.obj_id,
+        obj_mark=obj.obj_mark,
+        stable_id=obj.stable_id,
+        obj_type=obj.obj_type,
+        change_status=obj.change_status,
+        floor_name=floor.floor_name,
+        zone_label=zone.zone_label,
+        sect_label=section.sect_label,
+        dimension=section.dim,
+        mat_name=material.mat_name,
+        geometry_points=obj.geometry_points,
+        reinforcements=reinforcements,
+        quantity=quantity,
+    )

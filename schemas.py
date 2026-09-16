@@ -198,3 +198,63 @@ class BarSpecResponse(BaseModel):
     barspec_type: str
     barspec_grade: str
     barspec_weight: int
+
+
+# --- Browsing (Commit 23, D39) -----------------------------------------
+
+
+class RevisionListItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    rev_id: str
+    rev_number: int
+    building_id: str
+
+
+class ObjectListItem(BaseModel):
+    """The "Combined View" pattern (D39): foreign keys resolved to their
+    descriptive values, not returned as bare IDs."""
+
+    obj_id: str
+    obj_mark: str
+    stable_id: str
+    obj_type: str
+    change_status: str
+    floor_name: str
+    zone_label: str
+    sect_label: str
+    mat_name: str
+
+
+class ReinforcementDetail(BaseModel):
+    bar_id: str
+    barspec_label: str
+    barspec_dia: int
+    barspec_grade: str
+    bar_role: str
+    bar_count: int
+    bar_len: int
+    bar_space: int | None
+    bar_hook_type: str | None
+
+
+class QuantityDetail(BaseModel):
+    qty_sect: float
+    qty_bar: float
+
+
+class ObjectDetail(BaseModel):
+    obj_id: str
+    obj_mark: str
+    stable_id: str
+    obj_type: str
+    change_status: str
+    floor_name: str
+    zone_label: str
+    sect_label: str
+    dimension: dict[str, str | int]
+    mat_name: str
+    geometry_points: list[list[int]]
+    reinforcements: list[ReinforcementDetail]
+    # None until Commit 24 implements quantity calculation.
+    quantity: QuantityDetail | None
