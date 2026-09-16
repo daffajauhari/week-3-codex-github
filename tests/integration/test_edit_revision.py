@@ -54,7 +54,7 @@ def test_edit_carries_forward_untouched_changes_one_and_deletes_another(
     _seed_project_config(db_session)
 
     baseline = client.post(
-        "/buildings/B01/revisions/bulk",
+        "/projects/P01/buildings/B01/revisions/bulk",
         json={
             "objects": [
                 _column_payload(obj_mark="C1.F01.001", x=0),
@@ -67,7 +67,7 @@ def test_edit_carries_forward_untouched_changes_one_and_deletes_another(
     baseline_objects = {obj["obj_mark"]: obj for obj in baseline.json()["objects"]}
 
     edit_response = client.post(
-        "/buildings/B01/revisions/edit",
+        "/projects/P01/buildings/B01/revisions/edit",
         json={
             "changed_objects": [
                 {

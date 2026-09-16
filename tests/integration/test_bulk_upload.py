@@ -54,7 +54,7 @@ def test_first_bulk_upload_creates_revision_zero_with_all_added(
     _seed_project_config(db_session)
 
     response = client.post(
-        "/buildings/B01/revisions/bulk",
+        "/projects/P01/buildings/B01/revisions/bulk",
         json={
             "objects": [
                 _column_payload(obj_mark="C1.F01.001", x=0),
@@ -76,7 +76,7 @@ def test_second_bulk_upload_reports_modified_unchanged_and_deleted(
     _seed_project_config(db_session)
 
     first = client.post(
-        "/buildings/B01/revisions/bulk",
+        "/projects/P01/buildings/B01/revisions/bulk",
         json={
             "objects": [
                 _column_payload(obj_mark="C1.F01.001", x=0),
@@ -105,7 +105,9 @@ def test_second_bulk_upload_reports_modified_unchanged_and_deleted(
         ]
     }
 
-    response = client.post("/buildings/B01/revisions/bulk", json=second_payload)
+    response = client.post(
+        "/projects/P01/buildings/B01/revisions/bulk", json=second_payload
+    )
 
     assert response.status_code == 201
     body = response.json()
@@ -114,3 +116,32 @@ def test_second_bulk_upload_reports_modified_unchanged_and_deleted(
     assert statuses["C1.F01.001"] == "modified"
     assert statuses["C1.F01.002"] == "unchanged"
     assert statuses["C1.F01.003"] == "deleted"
+
+
+def test_bulk_upload_rejects_building_from_a_different_project(
+    client: TestClient, db_session: Session
+) -> None:
+    _seed_project_config(db_session)
+    db_session.add(Project(project_id="P02", project_name="other project"))
+    db_session.flush()
+
+    response = client.post(
+        "/projects/P02/buildings/B01/revisions/bulk",
+        json={"objects": [_column_payload(obj_mark="C1.F01.001", x=0)]},
+    )
+
+    assert response.status_code == 400
+
+
+def test_bulk_upload_returns_404_for_unknown_building(
+    client: TestClient, db_session: Session
+) -> None:
+    db_session.add(Project(project_id="P01", project_name="pilot"))
+    db_session.flush()
+
+    response = client.post(
+        "/projects/P01/buildings/does-not-exist/revisions/bulk",
+        json={"objects": []},
+    )
+
+    assert response.status_code == 404

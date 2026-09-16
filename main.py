@@ -100,12 +100,32 @@ def _next_rev_number(session: Session, building_id: str) -> int:
     return 0 if max_rev_number is None else max_rev_number + 1
 
 
+def _require_building_in_project(
+    session: Session, project_id: str, building_id: str
+) -> Building:
+    """D37: validate the full /projects/{project_id}/buildings/{building_id}
+    path chain - 404 if the building doesn't exist at all, 400 if it exists
+    but belongs to a different project."""
+    building = session.get(Building, building_id)
+    if building is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Building not found"
+        )
+    if building.project_id != project_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Building does not belong to this project",
+        )
+    return building
+
+
 @app.post(
-    "/buildings/{building_id}/revisions/bulk",
+    "/projects/{project_id}/buildings/{building_id}/revisions/bulk",
     response_model=RevisionResponse,
     status_code=status.HTTP_201_CREATED,
 )
 def bulk_upload_revision(
+    project_id: str,
     building_id: str,
     payload: BulkUploadRequest,
     session: Annotated[Session, Depends(get_session)],
@@ -114,10 +134,7 @@ def bulk_upload_revision(
     # session.commit() until the very end, so any exception - a 404, a
     # rejected batch, or anything else - leaves the transaction uncommitted
     # and it rolls back automatically when the session closes.
-    if session.get(Building, building_id) is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Building not found"
-        )
+    _require_building_in_project(session, project_id, building_id)
 
     object_inputs = [_to_object_input(obj) for obj in payload.objects]
 
@@ -159,19 +176,17 @@ def bulk_upload_revision(
 
 
 @app.post(
-    "/buildings/{building_id}/revisions/edit",
+    "/projects/{project_id}/buildings/{building_id}/revisions/edit",
     response_model=RevisionResponse,
     status_code=status.HTTP_201_CREATED,
 )
 def edit_revision(
+    project_id: str,
     building_id: str,
     payload: EditRevisionRequest,
     session: Annotated[Session, Depends(get_session)],
 ) -> RevisionResponse:
-    if session.get(Building, building_id) is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Building not found"
-        )
+    _require_building_in_project(session, project_id, building_id)
 
     # Pre-Validation Gate is scoped only to changed_objects (D33/D34) -
     # deleted_stable_ids and the carry-forward step don't introduce any
