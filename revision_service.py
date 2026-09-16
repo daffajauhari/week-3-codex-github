@@ -1,17 +1,20 @@
+import math
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from decimal import Decimal
 from uuid import uuid4
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ids import OBJECT_ID, REINFORCEMENT_ID, next_id
+from ids import OBJECT_ID, QUANTITY_ID, REINFORCEMENT_ID, next_id
 from models import (
     BarSpec,
     Floor,
     Identity,
     Material,
     Object,
+    Quantity,
     Reinforcement,
     Revision,
     Section,
@@ -336,6 +339,8 @@ def determine_change_status(
             )
         )
 
+    _create_quantity(session, new_object, obj_input.reinforcements)
+
     return new_object
 
 
@@ -540,7 +545,126 @@ def _duplicate_object(
             )
         )
 
+    _create_quantity(session, new_object, previous_bars)
+
     return new_object
+
+
+def _create_quantity(
+    session: Session,
+    obj: Object,
+    reinforcements: Sequence[Reinforcement | ResolvedReinforcement],
+) -> Quantity:
+    """D23: every Object row, of any change_status, gets exactly one
+    Quantity row - full snapshot (D9) applies here too."""
+    section = session.scalars(
+        select(Section).where(
+            Section.sect_id == obj.sect_id, Section.obj_type == obj.obj_type
+        )
+    ).first()
+    assert section is not None
+    material = session.get(Material, obj.mat_id)
+    assert material is not None
+
+    qty_sect = _compute_qty_sect(
+        obj.obj_type,
+        section.dim,
+        obj.geometry_points,
+        material.mat_type,
+        material.mat_weight,
+    )
+
+    barspec_ids = {bar.barspec_id for bar in reinforcements}
+    barspec_by_id = {
+        barspec.barspec_id: barspec
+        for barspec in session.scalars(
+            select(BarSpec).where(BarSpec.barspec_id.in_(barspec_ids))
+        ).all()
+    }
+    qty_bar = _compute_qty_bar(reinforcements, barspec_by_id)
+
+    quantity = Quantity(
+        qty_id=next_id(session, *QUANTITY_ID),
+        obj_id=obj.obj_id,
+        qty_sect=qty_sect,
+        qty_bar=qty_bar,
+    )
+    session.add(quantity)
+    return quantity
+
+
+def _compute_qty_sect(
+    obj_type: str,
+    dim: dict[str, str | int],
+    geometry_points: list[list[int]],
+    mat_type: str,
+    mat_weight: int,
+) -> Decimal:
+    """D23: section/concrete volume (or steel weight), in m3 (or kg).
+
+    Axis-point (column/beam/footing): cross-section area x extent between
+    the object's two geometry_points - rectangular (width x depth) or
+    circular (pi x radius^2), matching whichever shape VR-10 already
+    guaranteed is present. Boundary-point (wall/slab/stair): thickness x
+    the polygon's true 3D planar area (Newell's method - a 2D shoelace
+    formula would drop Z and silently mis-measure a sloped wall).
+    """
+    if obj_type in _AXIS_POINT_TYPES:
+        if dim.get("shape") == "circular":
+            radius = float(dim["diameter"]) / 2
+            cross_section_area = math.pi * radius**2
+        else:
+            cross_section_area = float(dim["width"]) * float(dim["depth"])
+        extent = _distance_3d(geometry_points[0], geometry_points[1])
+        volume_mm3 = cross_section_area * extent
+    else:
+        thickness = float(dim["thickness"])
+        volume_mm3 = thickness * _polygon_area_3d(geometry_points)
+
+    volume_m3 = volume_mm3 / 1e9
+
+    if mat_type == "steel":
+        return _to_decimal(volume_m3 * mat_weight)
+    return _to_decimal(volume_m3)
+
+
+def _distance_3d(p1: list[int], p2: list[int]) -> float:
+    return math.sqrt(sum((a - b) ** 2 for a, b in zip(p1, p2, strict=True)))
+
+
+def _polygon_area_3d(points: list[list[int]]) -> float:
+    """General 3D planar polygon area via Newell's method - correct
+    regardless of the polygon's orientation in space."""
+    nx = ny = nz = 0.0
+    count = len(points)
+    for i in range(count):
+        x1, y1, z1 = points[i]
+        x2, y2, z2 = points[(i + 1) % count]
+        nx += (y1 - y2) * (z1 + z2)
+        ny += (z1 - z2) * (x1 + x2)
+        nz += (x1 - x2) * (y1 + y2)
+    return math.sqrt(nx**2 + ny**2 + nz**2) / 2
+
+
+def _compute_qty_bar(
+    reinforcements: Sequence[Reinforcement | ResolvedReinforcement],
+    barspec_by_id: dict[str, BarSpec],
+) -> Decimal:
+    """D23: total reinforcement weight, in kg. Zero rows (valid for
+    steel, VR-11) yields 0, not an error."""
+    total_kg = 0.0
+    for bar in reinforcements:
+        barspec = barspec_by_id[bar.barspec_id]
+        area_mm2 = math.pi * (barspec.barspec_dia / 2) ** 2
+        volume_mm3 = bar.bar_count * bar.bar_len * area_mm2
+        total_kg += (volume_mm3 / 1e9) * barspec.barspec_weight
+    return _to_decimal(total_kg)
+
+
+def _to_decimal(value: float) -> Decimal:
+    # Route through str() rather than Decimal(float) directly, so the
+    # binary float's raw representation doesn't leak into the rounding.
+    return Decimal(str(value)).quantize(Decimal("0.01"))
 
 
 def _check_contextual_completeness(

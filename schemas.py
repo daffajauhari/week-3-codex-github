@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -239,8 +240,10 @@ class ReinforcementDetail(BaseModel):
 
 
 class QuantityDetail(BaseModel):
-    qty_sect: float
-    qty_bar: float
+    # Decimal, not float - matches Quantity.qty_sect/qty_bar (D23): a plain
+    # float risks binary rounding error for BOQ figures.
+    qty_sect: Decimal
+    qty_bar: Decimal
 
 
 class ObjectDetail(BaseModel):

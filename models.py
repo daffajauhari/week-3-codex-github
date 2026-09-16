@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
@@ -7,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     ForeignKeyConstraint,
     Integer,
+    Numeric,
     String,
     UniqueConstraint,
     func,
@@ -257,5 +259,7 @@ class Quantity(Base):
     obj_id: Mapped[str] = mapped_column(
         String, ForeignKey("objects.obj_id"), nullable=False
     )
-    qty_sect: Mapped[int] = mapped_column(Integer, nullable=False)
-    qty_bar: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Decimal, not float/Integer: a plain float risks binary rounding
+    # error for BOQ figures.
+    qty_sect: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    qty_bar: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
