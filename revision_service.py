@@ -58,7 +58,7 @@ def validate_batch(session: Session, objects: Sequence[ObjectInput]) -> list[str
     so the caller can reject the batch with a complete list.
     """
     problems = _check_referential_existence(session, objects)
-    problems.extend(_check_contextual_completeness(objects))
+    problems.extend(_check_contextual_completeness(session, objects))
     return problems
 
 
@@ -411,8 +411,17 @@ def _duplicate_object(
     return new_object
 
 
-def _check_contextual_completeness(objects: Sequence[ObjectInput]) -> list[str]:
+def _check_contextual_completeness(
+    session: Session, objects: Sequence[ObjectInput]
+) -> list[str]:
     problems: list[str] = []
+
+    dims_by_sect_pair = {
+        (sect_id, obj_type): dim
+        for sect_id, obj_type, dim in session.execute(
+            select(Section.sect_id, Section.obj_type, Section.dim)
+        ).all()
+    }
 
     for index, obj in enumerate(objects):
         point_count = len(obj.geometry_points)
@@ -426,6 +435,12 @@ def _check_contextual_completeness(objects: Sequence[ObjectInput]) -> list[str]:
                 f"object[{index}] ({obj.obj_mark}): obj_type '{obj.obj_type}' "
                 f"requires at least 3 geometry_points, got {point_count}"
             )
+
+        # Referential Existence already reports a missing (sect_id, obj_type)
+        # pair - only check shape when the section actually resolved.
+        dim = dims_by_sect_pair.get((obj.sect_id, obj.obj_type))
+        if dim is not None:
+            problems.extend(_check_dimension_shape(index, obj, dim))
 
         for bar_index, bar in enumerate(obj.reinforcements):
             if bar.bar_role != _TRANSVERSE_ROLE:
@@ -442,3 +457,44 @@ def _check_contextual_completeness(objects: Sequence[ObjectInput]) -> list[str]:
                 )
 
     return problems
+
+
+def _check_dimension_shape(
+    index: int, obj: ObjectInput, dim: dict[str, str | int]
+) -> list[str]:
+    """VR-10: Section.dimension shape, by obj_type.
+
+    Rectangular (width+depth) or circular (diameter) for axis-point types
+    (column/beam/footing); thickness for boundary-point types
+    (wall/slab/stair). VR-10's own wording only names column/beam for the
+    rectangular/circular case, but footing is axis-point per D47 and
+    needs a shape to compute qty_sect the same way column/beam do - this
+    treats that omission as a wording gap rather than excluding footing.
+    """
+    label = f"object[{index}] ({obj.obj_mark})"
+    problems: list[str] = []
+
+    if obj.obj_type in _AXIS_POINT_TYPES:
+        shape = dim.get("shape")
+        if shape == "rectangular":
+            if not _is_positive_number(dim.get("width")):
+                problems.append(f"{label}: section dimension requires width > 0")
+            if not _is_positive_number(dim.get("depth")):
+                problems.append(f"{label}: section dimension requires depth > 0")
+        elif shape == "circular":
+            if not _is_positive_number(dim.get("diameter")):
+                problems.append(f"{label}: section dimension requires diameter > 0")
+        else:
+            problems.append(
+                f"{label}: section dimension shape must be 'rectangular' or "
+                f"'circular' for obj_type '{obj.obj_type}', got {shape!r}"
+            )
+    else:
+        if not _is_positive_number(dim.get("thickness")):
+            problems.append(f"{label}: section dimension requires thickness > 0")
+
+    return problems
+
+
+def _is_positive_number(value: object) -> bool:
+    return isinstance(value, int | float) and not isinstance(value, bool) and value > 0
