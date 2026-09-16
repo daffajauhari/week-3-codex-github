@@ -12,7 +12,7 @@ def _column(*, is_new: bool, stable_id: str | None = None) -> ObjectInput:
     return ObjectInput(
         is_new=is_new,
         obj_mark="C1.F01.001",
-        obj_type="col",
+        obj_type="column",
         floor_id="F01",
         zone_id="Z01",
         sect_id="C1",

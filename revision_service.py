@@ -18,8 +18,8 @@ from models import (
     Zone,
 )
 
-_AXIS_POINT_TYPES = {"col", "beam"}
-_BOUNDARY_POINT_TYPES = {"wall", "slab"}
+_AXIS_POINT_TYPES = {"column", "beam", "footing"}
+_BOUNDARY_POINT_TYPES = {"wall", "slab", "stair"}
 _TRANSVERSE_ROLE = "transverse"
 
 

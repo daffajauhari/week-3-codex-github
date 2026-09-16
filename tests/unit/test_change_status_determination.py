@@ -22,7 +22,7 @@ def _previous_object(**overrides: object) -> Object:
         "stable_id": "abc-123",
         "rev_id": "R1",
         "change_status": "added",
-        "obj_type": "col",
+        "obj_type": "column",
         "floor_id": "F01",
         "zone_id": "Z01",
         "sect_id": "C1",
@@ -37,7 +37,7 @@ def _obj_input(**overrides: object) -> ObjectInput:
     defaults: dict[str, object] = {
         "is_new": False,
         "obj_mark": "C1.F01.001",
-        "obj_type": "col",
+        "obj_type": "column",
         "floor_id": "F01",
         "zone_id": "Z01",
         "sect_id": "C1",

@@ -54,7 +54,8 @@ class Section(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "obj_type IN ('col', 'beam', 'wall', 'slab')",
+            "obj_type IN "
+            "('column', 'beam', 'wall', 'slab', 'footing', 'stair')",
             name="ck_sections_obj_type",
         ),
         UniqueConstraint(

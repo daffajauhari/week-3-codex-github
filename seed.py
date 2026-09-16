@@ -27,17 +27,17 @@ def seed_data() -> None:
             [
                 Section(
                     sect_id="C1",
-                    obj_type="col",
+                    obj_type="column",
                     dim={"shape": "rectangular", "width": 400, "depth": 400},
                 ),
                 Section(
                     sect_id="C2",
-                    obj_type="col",
+                    obj_type="column",
                     dim={"shape": "circular", "diameter": 350},
                 ),
                 Section(
                     sect_id="C3",
-                    obj_type="col",
+                    obj_type="column",
                     dim={"shape": "rectangular", "width": 300, "depth": 300},
                 ),
                 Section(

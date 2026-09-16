@@ -18,7 +18,7 @@ def _seed_project_config(session: Session) -> None:
             Zone(zone_id="Z01", pour_seq=1, building_id="B01"),
             Section(
                 sect_id="C1",
-                obj_type="col",
+                obj_type="column",
                 dim={"shape": "rectangular", "width": 400, "depth": 400},
             ),
             Material(mat_id="K250", mat_name="concrete K250", mat_type="concrete", mat_strength=250),
@@ -31,7 +31,7 @@ def _column_payload(*, obj_mark: str, x: int) -> dict:
     return {
         "is_new": True,
         "obj_mark": obj_mark,
-        "obj_type": "col",
+        "obj_type": "column",
         "floor_id": "F01",
         "zone_id": "Z01",
         "sect_id": "C1",

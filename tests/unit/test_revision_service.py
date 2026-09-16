@@ -30,7 +30,7 @@ def _valid_column() -> ObjectInput:
     return ObjectInput(
         is_new=True,
         obj_mark="C1.F01.001",
-        obj_type="col",
+        obj_type="column",
         floor_id="F01",
         zone_id="Z01",
         sect_id="C1",
@@ -60,7 +60,7 @@ def test_rejects_nonexistent_floor_id() -> None:
         floor_ids=[],
         zone_ids=["Z01"],
         mat_ids=["K250"],
-        sect_pairs=[("C1", "col")],
+        sect_pairs=[("C1", "column")],
         barspec_ids=["D16", "D10"],
     )
 
@@ -74,13 +74,13 @@ def test_rejects_transverse_bar_missing_bar_space() -> None:
         floor_ids=["F01"],
         zone_ids=["Z01"],
         mat_ids=["K250"],
-        sect_pairs=[("C1", "col")],
+        sect_pairs=[("C1", "column")],
         barspec_ids=["D10"],
     )
     obj = ObjectInput(
         is_new=True,
         obj_mark="C1.F01.001",
-        obj_type="col",
+        obj_type="column",
         floor_id="F01",
         zone_id="Z01",
         sect_id="C1",
@@ -107,13 +107,13 @@ def test_rejects_column_with_three_geometry_points() -> None:
         floor_ids=["F01"],
         zone_ids=["Z01"],
         mat_ids=["K250"],
-        sect_pairs=[("C1", "col")],
+        sect_pairs=[("C1", "column")],
         barspec_ids=[],
     )
     obj = ObjectInput(
         is_new=True,
         obj_mark="C1.F01.001",
-        obj_type="col",
+        obj_type="column",
         floor_id="F01",
         zone_id="Z01",
         sect_id="C1",
@@ -131,7 +131,7 @@ def test_accepts_fully_valid_batch() -> None:
         floor_ids=["F01"],
         zone_ids=["Z01"],
         mat_ids=["K250"],
-        sect_pairs=[("C1", "col")],
+        sect_pairs=[("C1", "column")],
         barspec_ids=["D16", "D10"],
     )
 

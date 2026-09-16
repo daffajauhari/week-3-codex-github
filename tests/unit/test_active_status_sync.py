@@ -15,7 +15,7 @@ def _previous_object() -> Object:
         stable_id="abc-123",
         rev_id="R1",
         change_status="added",
-        obj_type="col",
+        obj_type="column",
         floor_id="F01",
         zone_id="Z01",
         sect_id="C1",

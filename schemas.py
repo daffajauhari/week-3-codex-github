@@ -15,7 +15,7 @@ class ReinforcementCreate(BaseModel):
 class ObjectCreate(BaseModel):
     is_new: bool
     obj_mark: str
-    obj_type: Literal["col", "beam", "wall", "slab"]
+    obj_type: Literal["column", "beam", "wall", "slab", "footing", "stair"]
     floor_id: str
     zone_id: str
     sect_id: str
