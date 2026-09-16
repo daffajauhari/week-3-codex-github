@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from models import Building, Floor, Material, Project, Section, Zone
+from models import BarSpec, Building, Floor, Material, Project, Section, Zone
 
 pytestmark = pytest.mark.integration
 
@@ -29,6 +29,14 @@ def _seed_project_config(session: Session) -> None:
                 mat_strength=250,
                 mat_weight=2400,
             ),
+            BarSpec(
+                barspec_id="D16",
+                barspec_label="D16 deformed BjTS 420",
+                barspec_dia=16,
+                barspec_type="deformed",
+                barspec_grade="BjTS 420",
+                barspec_weight=7850,
+            ),
         ]
     )
     session.flush()
@@ -44,7 +52,15 @@ def _column_payload(*, obj_mark: str, x: int) -> dict:
         "sect_label": "C1 - 400x400 column",
         "mat_name": "concrete K250",
         "geometry_points": [[x, 0, 0], [x, 0, 3000]],
-        "reinforcements": [],
+        # VR-11: concrete objects need at least one reinforcement row.
+        "reinforcements": [
+            {
+                "barspec_label": "D16 deformed BjTS 420",
+                "bar_role": "longitudinal",
+                "bar_count": 8,
+                "bar_len": 3000,
+            }
+        ],
     }
 
 

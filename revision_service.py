@@ -93,11 +93,17 @@ class _SectionLookup:
 
 
 @dataclass
+class _MaterialLookup:
+    mat_id: str
+    mat_type: str
+
+
+@dataclass
 class _Resolution:
     floor_by_name: dict[str, str]
     zone_by_label: dict[str, str]
     section_by_label: dict[str, _SectionLookup]
-    mat_by_name: dict[str, str]
+    mat_by_name: dict[str, _MaterialLookup]
     barspec_by_label: dict[str, str]
 
 
@@ -163,9 +169,9 @@ def _resolve_referential_existence(
         ).all()
     }
     mat_by_name = {
-        mat_name: mat_id
-        for mat_id, mat_name in session.execute(
-            select(Material.mat_id, Material.mat_name)
+        mat_name: _MaterialLookup(mat_id=mat_id, mat_type=mat_type)
+        for mat_id, mat_name, mat_type in session.execute(
+            select(Material.mat_id, Material.mat_name, Material.mat_type)
         ).all()
     }
     barspec_by_label = {
@@ -214,7 +220,7 @@ def _build_resolved_objects(
                 floor_id=resolution.floor_by_name[obj.floor_name],
                 zone_id=resolution.zone_by_label[obj.zone_label],
                 sect_id=section.sect_id,
-                mat_id=resolution.mat_by_name[obj.mat_name],
+                mat_id=resolution.mat_by_name[obj.mat_name].mat_id,
                 geometry_points=obj.geometry_points,
                 reinforcements=[
                     ResolvedReinforcement(
@@ -690,6 +696,22 @@ def _check_contextual_completeness(
         section = resolution.section_by_label.get(obj.sect_label)
         if section is not None and section.obj_type == obj.obj_type:
             problems.extend(_check_dimension_shape(index, obj, section.dim))
+
+        # VR-11: cardinality (how many Reinforcement rows may exist), not
+        # a field-level rule - VR-06's per-field checks below still apply
+        # to whichever rows do exist, unaffected by this. Only checked
+        # when the material actually resolved (Referential Existence
+        # already reports an unknown mat_name).
+        material = resolution.mat_by_name.get(obj.mat_name)
+        if (
+            material is not None
+            and material.mat_type == "concrete"
+            and not obj.reinforcements
+        ):
+            problems.append(
+                f"object[{index}] ({obj.obj_mark}): concrete objects require "
+                "at least one reinforcement row"
+            )
 
         for bar_index, bar in enumerate(obj.reinforcements):
             if bar.bar_role != _TRANSVERSE_ROLE:
