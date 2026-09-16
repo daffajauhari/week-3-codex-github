@@ -499,6 +499,15 @@ def carry_forward_unchanged(
 def _get_previous_revision_objects(
     session: Session, building_id: str, rev_id: str
 ) -> Sequence[Object]:
+    """Objects from the immediately preceding revision, excluding anything
+    whose Identity is already inactive (D17/D18) - a deleted object's row
+    is only a historical snapshot, never a baseline to carry or re-flag.
+    Both callers (sync_active_status, carry_forward_unchanged) treat
+    "previous baseline" as "still-active objects" only; without this
+    filter, carry_forward_unchanged had no other guard and was silently
+    resurrecting deleted objects as 'unchanged' the next time an
+    Interactive Edit revision didn't re-mention their stable_id.
+    """
     current_revision = session.get(Revision, rev_id)
     assert current_revision is not None
 
@@ -512,7 +521,9 @@ def _get_previous_revision_objects(
         return []
 
     return session.scalars(
-        select(Object).where(Object.rev_id == previous_revision.rev_id)
+        select(Object)
+        .join(Identity, Identity.stable_id == Object.stable_id)
+        .where(Object.rev_id == previous_revision.rev_id, Identity.is_active)
     ).all()
 
 

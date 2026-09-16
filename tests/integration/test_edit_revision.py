@@ -106,3 +106,48 @@ def test_edit_carries_forward_untouched_changes_one_and_deletes_another(
     # untouched object must be carried forward, never silently dropped
     assert statuses["C1.F01.003"] == "unchanged"
     assert len(body["objects"]) == 3
+
+
+def test_edit_deleted_object_stays_deleted_across_a_later_untouched_edit(
+    client: TestClient, db_session: Session
+) -> None:
+    """Regression test: carry_forward_unchanged used to resurrect a
+    deleted object as 'unchanged' the next time an edit revision didn't
+    re-mention its stable_id, even though its Identity stayed inactive."""
+    _seed_project_config(db_session)
+
+    baseline = client.post(
+        "/projects/P01/buildings/B01/revisions/bulk",
+        json={
+            "objects": [
+                _column_payload(obj_mark="C1.F01.001", x=0),
+                _column_payload(obj_mark="C1.F01.002", x=4000),
+            ]
+        },
+    )
+    assert baseline.status_code == 201
+    baseline_objects = {obj["obj_mark"]: obj for obj in baseline.json()["objects"]}
+
+    delete_response = client.post(
+        "/projects/P01/buildings/B01/revisions/edit",
+        json={
+            "changed_objects": [],
+            "deleted_stable_ids": [baseline_objects["C1.F01.001"]["stable_id"]],
+        },
+    )
+    assert delete_response.status_code == 201
+    delete_statuses = {
+        obj["obj_mark"]: obj["change_status"] for obj in delete_response.json()["objects"]
+    }
+    assert delete_statuses["C1.F01.001"] == "deleted"
+    assert delete_statuses["C1.F01.002"] == "unchanged"
+
+    untouched_response = client.post(
+        "/projects/P01/buildings/B01/revisions/edit",
+        json={"changed_objects": [], "deleted_stable_ids": []},
+    )
+
+    assert untouched_response.status_code == 201
+    body = untouched_response.json()
+    marks = {obj["obj_mark"] for obj in body["objects"]}
+    assert marks == {"C1.F01.002"}
