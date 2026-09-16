@@ -4,11 +4,34 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func, select, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from database import engine, get_session
-from ids import REVISION_ID, next_id
-from models import Building, Object, Revision
+from ids import (
+    BARSPEC_ID,
+    BUILDING_ID,
+    FLOOR_ID,
+    GRID_ID,
+    MATERIAL_ID,
+    PROJECT_ID,
+    REVISION_ID,
+    SECTION_ID,
+    ZONE_ID,
+    next_id,
+)
+from models import (
+    BarSpec,
+    Building,
+    Floor,
+    Grid,
+    Material,
+    Object,
+    Project,
+    Revision,
+    Section,
+    Zone,
+)
 from revision_service import (
     ObjectInput,
     ReinforcementInput,
@@ -18,13 +41,30 @@ from revision_service import (
     determine_change_status,
     sync_active_status,
     validate_batch,
+    validate_section_dimension_shape,
 )
 from schemas import (
+    BarSpecCreate,
+    BarSpecResponse,
+    BuildingCreate,
+    BuildingResponse,
     BulkUploadRequest,
     EditRevisionRequest,
+    FloorCreate,
+    FloorResponse,
+    GridCreate,
+    GridResponse,
+    MaterialCreate,
+    MaterialResponse,
     ObjectCreate,
+    ProjectCreate,
+    ProjectResponse,
     RevisionObjectResult,
     RevisionResponse,
+    SectionCreate,
+    SectionResponse,
+    ZoneCreate,
+    ZoneResponse,
 )
 
 app = FastAPI()
@@ -233,3 +273,203 @@ def edit_revision(
     return RevisionResponse(
         rev_id=revision.rev_id, rev_number=revision.rev_number, objects=results
     )
+
+
+# --- Project Configuration (Commit 22, D38) ----------------------------
+#
+# No new synthetic data is generated here - these endpoints are for user
+# input going forward, existing seeded rows stay as-is.
+
+
+def _commit_or_conflict(session: Session, conflict_detail: str) -> None:
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=conflict_detail
+        ) from None
+
+
+def _require_project(session: Session, project_id: str) -> Project:
+    project = session.get(Project, project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
+        )
+    return project
+
+
+@app.post(
+    "/projects", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED
+)
+def create_project(
+    payload: ProjectCreate,
+    session: Annotated[Session, Depends(get_session)],
+) -> ProjectResponse:
+    project = Project(
+        project_id=next_id(session, *PROJECT_ID), project_name=payload.project_name
+    )
+    session.add(project)
+    _commit_or_conflict(session, "project_name already exists")
+    return ProjectResponse.model_validate(project)
+
+
+@app.post(
+    "/projects/{project_id}/buildings",
+    response_model=BuildingResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_building(
+    project_id: str,
+    payload: BuildingCreate,
+    session: Annotated[Session, Depends(get_session)],
+) -> BuildingResponse:
+    _require_project(session, project_id)
+
+    building = Building(
+        building_id=next_id(session, *BUILDING_ID),
+        building_name=payload.building_name,
+        project_id=project_id,
+    )
+    session.add(building)
+    _commit_or_conflict(session, "building_name already exists")
+    return BuildingResponse.model_validate(building)
+
+
+@app.post(
+    "/projects/{project_id}/buildings/{building_id}/floors",
+    response_model=FloorResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_floor(
+    project_id: str,
+    building_id: str,
+    payload: FloorCreate,
+    session: Annotated[Session, Depends(get_session)],
+) -> FloorResponse:
+    _require_building_in_project(session, project_id, building_id)
+
+    floor = Floor(
+        floor_id=next_id(session, *FLOOR_ID),
+        floor_name=payload.floor_name,
+        elevation=payload.elevation,
+        building_id=building_id,
+    )
+    session.add(floor)
+    _commit_or_conflict(session, "floor_name already exists in this building")
+    return FloorResponse.model_validate(floor)
+
+
+@app.post(
+    "/projects/{project_id}/buildings/{building_id}/zones",
+    response_model=ZoneResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_zone(
+    project_id: str,
+    building_id: str,
+    payload: ZoneCreate,
+    session: Annotated[Session, Depends(get_session)],
+) -> ZoneResponse:
+    _require_building_in_project(session, project_id, building_id)
+
+    zone = Zone(
+        zone_id=next_id(session, *ZONE_ID),
+        zone_label=payload.zone_label,
+        pour_seq=payload.pour_seq,
+        building_id=building_id,
+    )
+    session.add(zone)
+    _commit_or_conflict(session, "zone_label already exists in this building")
+    return ZoneResponse.model_validate(zone)
+
+
+@app.post(
+    "/projects/{project_id}/buildings/{building_id}/grid",
+    response_model=GridResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_grid(
+    project_id: str,
+    building_id: str,
+    payload: GridCreate,
+    session: Annotated[Session, Depends(get_session)],
+) -> GridResponse:
+    _require_building_in_project(session, project_id, building_id)
+
+    grid = Grid(
+        grid_id=next_id(session, *GRID_ID),
+        grid_label=payload.grid_label,
+        grid_axis=payload.grid_axis,
+        grid_coord=payload.grid_coord,
+        building_id=building_id,
+    )
+    session.add(grid)
+    _commit_or_conflict(
+        session, "grid_label + grid_axis already exists in this building"
+    )
+    return GridResponse.model_validate(grid)
+
+
+@app.post(
+    "/materials", response_model=MaterialResponse, status_code=status.HTTP_201_CREATED
+)
+def create_material(
+    payload: MaterialCreate,
+    session: Annotated[Session, Depends(get_session)],
+) -> MaterialResponse:
+    material = Material(
+        mat_id=next_id(session, *MATERIAL_ID),
+        mat_name=payload.mat_name,
+        mat_type=payload.mat_type,
+        mat_strength=payload.mat_strength,
+        mat_weight=payload.mat_weight,
+    )
+    session.add(material)
+    _commit_or_conflict(session, "mat_name already exists")
+    return MaterialResponse.model_validate(material)
+
+
+@app.post(
+    "/sections", response_model=SectionResponse, status_code=status.HTTP_201_CREATED
+)
+def create_section(
+    payload: SectionCreate,
+    session: Annotated[Session, Depends(get_session)],
+) -> SectionResponse:
+    problems = validate_section_dimension_shape(payload.obj_type, payload.dimension)
+    if problems:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=problems
+        )
+
+    section = Section(
+        sect_id=next_id(session, *SECTION_ID),
+        sect_label=payload.sect_label,
+        obj_type=payload.obj_type,
+        dim=payload.dimension,
+    )
+    session.add(section)
+    _commit_or_conflict(session, "sect_label already exists")
+    return SectionResponse.model_validate(section)
+
+
+@app.post(
+    "/barspec", response_model=BarSpecResponse, status_code=status.HTTP_201_CREATED
+)
+def create_barspec(
+    payload: BarSpecCreate,
+    session: Annotated[Session, Depends(get_session)],
+) -> BarSpecResponse:
+    barspec = BarSpec(
+        barspec_id=next_id(session, *BARSPEC_ID),
+        barspec_label=payload.barspec_label,
+        barspec_dia=payload.barspec_dia,
+        barspec_type=payload.barspec_type,
+        barspec_grade=payload.barspec_grade,
+        barspec_weight=payload.barspec_weight,
+    )
+    session.add(barspec)
+    _commit_or_conflict(session, "barspec_label already exists")
+    return BarSpecResponse.model_validate(barspec)

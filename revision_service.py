@@ -587,6 +587,16 @@ def _check_contextual_completeness(
 def _check_dimension_shape(
     index: int, obj: ObjectInput, dim: dict[str, str | int]
 ) -> list[str]:
+    label = f"object[{index}] ({obj.obj_mark})"
+    return [
+        f"{label}: {problem}"
+        for problem in validate_section_dimension_shape(obj.obj_type, dim)
+    ]
+
+
+def validate_section_dimension_shape(
+    obj_type: str, dim: dict[str, str | int]
+) -> list[str]:
     """VR-10: Section.dimension shape, by obj_type.
 
     Rectangular (width+depth) or circular (diameter) for axis-point types
@@ -595,28 +605,30 @@ def _check_dimension_shape(
     rectangular/circular case, but footing is axis-point per D47 and
     needs a shape to compute qty_sect the same way column/beam do - this
     treats that omission as a wording gap rather than excluding footing.
+
+    Standalone (no object context) so both the Pre-Validation Gate and the
+    POST /sections endpoint (Commit 22) can reuse the same rule.
     """
-    label = f"object[{index}] ({obj.obj_mark})"
     problems: list[str] = []
 
-    if obj.obj_type in _AXIS_POINT_TYPES:
+    if obj_type in _AXIS_POINT_TYPES:
         shape = dim.get("shape")
         if shape == "rectangular":
             if not _is_positive_number(dim.get("width")):
-                problems.append(f"{label}: section dimension requires width > 0")
+                problems.append("section dimension requires width > 0")
             if not _is_positive_number(dim.get("depth")):
-                problems.append(f"{label}: section dimension requires depth > 0")
+                problems.append("section dimension requires depth > 0")
         elif shape == "circular":
             if not _is_positive_number(dim.get("diameter")):
-                problems.append(f"{label}: section dimension requires diameter > 0")
+                problems.append("section dimension requires diameter > 0")
         else:
             problems.append(
-                f"{label}: section dimension shape must be 'rectangular' or "
-                f"'circular' for obj_type '{obj.obj_type}', got {shape!r}"
+                "section dimension shape must be 'rectangular' or "
+                f"'circular' for obj_type '{obj_type}', got {shape!r}"
             )
     else:
         if not _is_positive_number(dim.get("thickness")):
-            problems.append(f"{label}: section dimension requires thickness > 0")
+            problems.append("section dimension requires thickness > 0")
 
     return problems
 

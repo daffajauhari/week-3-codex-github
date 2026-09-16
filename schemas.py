@@ -1,6 +1,6 @@
 from typing import Literal, Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ReinforcementCreate(BaseModel):
@@ -68,3 +68,133 @@ class RevisionResponse(BaseModel):
     rev_id: str
     rev_number: int
     objects: list[RevisionObjectResult]
+
+
+# --- Project Configuration (Commit 22, D38) ---------------------------
+
+
+class ProjectCreate(BaseModel):
+    project_name: str | None = None
+
+
+class ProjectResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    project_id: str
+    project_name: str | None
+
+
+class BuildingCreate(BaseModel):
+    building_name: str | None = None
+
+
+class BuildingResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    building_id: str
+    building_name: str | None
+    project_id: str
+
+
+class FloorCreate(BaseModel):
+    floor_name: str
+    elevation: int
+
+
+class FloorResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    floor_id: str
+    floor_name: str
+    elevation: int
+    building_id: str
+
+
+class ZoneCreate(BaseModel):
+    zone_label: str
+    pour_seq: int
+
+
+class ZoneResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    zone_id: str
+    zone_label: str
+    pour_seq: int
+    building_id: str
+
+
+class GridCreate(BaseModel):
+    grid_label: str
+    grid_axis: Literal["x", "y"]
+    grid_coord: dict[str, int]
+
+    @model_validator(mode="after")
+    def _validate_grid_coord(self) -> Self:
+        if set(self.grid_coord) != {"x", "y"}:
+            raise ValueError(
+                "grid_coord must have exactly 'x' and 'y' keys, "
+                f"got {sorted(self.grid_coord)}"
+            )
+        return self
+
+
+class GridResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    grid_id: str
+    grid_label: str
+    grid_axis: str
+    grid_coord: dict[str, str | int]
+    building_id: str
+
+
+class MaterialCreate(BaseModel):
+    mat_name: str
+    mat_type: str
+    mat_strength: int
+    mat_weight: int
+
+
+class MaterialResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    mat_id: str
+    mat_name: str
+    mat_type: str
+    mat_strength: int
+    mat_weight: int
+
+
+class SectionCreate(BaseModel):
+    obj_type: Literal["column", "beam", "wall", "slab", "footing", "stair"]
+    sect_label: str
+    dimension: dict[str, str | int]
+
+
+class SectionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    sect_id: str
+    sect_label: str
+    obj_type: str
+    dim: dict[str, str | int]
+
+
+class BarSpecCreate(BaseModel):
+    barspec_label: str
+    barspec_dia: int
+    barspec_type: str
+    barspec_grade: str
+    barspec_weight: int
+
+
+class BarSpecResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    barspec_id: str
+    barspec_label: str
+    barspec_dia: int
+    barspec_type: str
+    barspec_grade: str
+    barspec_weight: int
