@@ -368,6 +368,22 @@ def create_floor(
     return FloorResponse.model_validate(floor)
 
 
+@app.get(
+    "/projects/{project_id}/buildings/{building_id}/floors",
+    response_model=list[FloorResponse],
+)
+def list_floors(
+    project_id: str,
+    building_id: str,
+    session: Annotated[Session, Depends(get_session)],
+) -> list[FloorResponse]:
+    _require_building_in_project(session, project_id, building_id)
+    floors = session.scalars(
+        select(Floor).where(Floor.building_id == building_id).order_by(Floor.floor_id)
+    ).all()
+    return [FloorResponse.model_validate(floor) for floor in floors]
+
+
 @app.post(
     "/projects/{project_id}/buildings/{building_id}/zones",
     response_model=ZoneResponse,
@@ -390,6 +406,22 @@ def create_zone(
     session.add(zone)
     _commit_or_conflict(session, "zone_label already exists in this building")
     return ZoneResponse.model_validate(zone)
+
+
+@app.get(
+    "/projects/{project_id}/buildings/{building_id}/zones",
+    response_model=list[ZoneResponse],
+)
+def list_zones(
+    project_id: str,
+    building_id: str,
+    session: Annotated[Session, Depends(get_session)],
+) -> list[ZoneResponse]:
+    _require_building_in_project(session, project_id, building_id)
+    zones = session.scalars(
+        select(Zone).where(Zone.building_id == building_id).order_by(Zone.zone_id)
+    ).all()
+    return [ZoneResponse.model_validate(zone) for zone in zones]
 
 
 @app.post(
@@ -419,6 +451,22 @@ def create_grid(
     return GridResponse.model_validate(grid)
 
 
+@app.get(
+    "/projects/{project_id}/buildings/{building_id}/grid",
+    response_model=list[GridResponse],
+)
+def list_grid(
+    project_id: str,
+    building_id: str,
+    session: Annotated[Session, Depends(get_session)],
+) -> list[GridResponse]:
+    _require_building_in_project(session, project_id, building_id)
+    grid_rows = session.scalars(
+        select(Grid).where(Grid.building_id == building_id).order_by(Grid.grid_id)
+    ).all()
+    return [GridResponse.model_validate(grid) for grid in grid_rows]
+
+
 @app.post(
     "/materials", response_model=MaterialResponse, status_code=status.HTTP_201_CREATED
 )
@@ -436,6 +484,14 @@ def create_material(
     session.add(material)
     _commit_or_conflict(session, "mat_name already exists")
     return MaterialResponse.model_validate(material)
+
+
+@app.get("/materials", response_model=list[MaterialResponse])
+def list_materials(
+    session: Annotated[Session, Depends(get_session)],
+) -> list[MaterialResponse]:
+    materials = session.scalars(select(Material).order_by(Material.mat_id)).all()
+    return [MaterialResponse.model_validate(material) for material in materials]
 
 
 @app.post(
@@ -462,6 +518,14 @@ def create_section(
     return SectionResponse.model_validate(section)
 
 
+@app.get("/sections", response_model=list[SectionResponse])
+def list_sections(
+    session: Annotated[Session, Depends(get_session)],
+) -> list[SectionResponse]:
+    sections = session.scalars(select(Section).order_by(Section.sect_id)).all()
+    return [SectionResponse.model_validate(section) for section in sections]
+
+
 @app.post(
     "/barspec", response_model=BarSpecResponse, status_code=status.HTTP_201_CREATED
 )
@@ -480,6 +544,14 @@ def create_barspec(
     session.add(barspec)
     _commit_or_conflict(session, "barspec_label already exists")
     return BarSpecResponse.model_validate(barspec)
+
+
+@app.get("/barspec", response_model=list[BarSpecResponse])
+def list_barspec(
+    session: Annotated[Session, Depends(get_session)],
+) -> list[BarSpecResponse]:
+    barspecs = session.scalars(select(BarSpec).order_by(BarSpec.barspec_id)).all()
+    return [BarSpecResponse.model_validate(barspec) for barspec in barspecs]
 
 
 # --- Browsing (Commit 23, D39) -------------------------------------------

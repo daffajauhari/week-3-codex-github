@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import IntegrityError
 
-from models import Building, Project
+from models import BarSpec, Building, Floor, Grid, Material, Project, Section, Zone
 
 pytestmark = pytest.mark.unit
 
@@ -303,3 +303,107 @@ def test_create_barspec_happy_path(
 
     assert response.status_code == 201
     assert response.json()["barspec_dia"] == 25
+
+
+# --- GET listing endpoints --------------------------------------------
+
+
+def test_list_floors_happy_path(client: TestClient, mock_session: MagicMock) -> None:
+    mock_session.get.return_value = Building(
+        building_id="B01", building_name="Tower A", project_id="P01"
+    )
+    mock_session.scalars.return_value.all.return_value = [
+        Floor(floor_id="F01", floor_name="ground floor", elevation=0, building_id="B01")
+    ]
+
+    response = client.get("/projects/P01/buildings/B01/floors")
+
+    assert response.status_code == 200
+    assert response.json()[0]["floor_name"] == "ground floor"
+
+
+def test_list_zones_happy_path(client: TestClient, mock_session: MagicMock) -> None:
+    mock_session.get.return_value = Building(
+        building_id="B01", building_name="Tower A", project_id="P01"
+    )
+    mock_session.scalars.return_value.all.return_value = [
+        Zone(zone_id="Z01", zone_label="Zone 1", pour_seq=1, building_id="B01")
+    ]
+
+    response = client.get("/projects/P01/buildings/B01/zones")
+
+    assert response.status_code == 200
+    assert response.json()[0]["zone_label"] == "Zone 1"
+
+
+def test_list_grid_happy_path(client: TestClient, mock_session: MagicMock) -> None:
+    mock_session.get.return_value = Building(
+        building_id="B01", building_name="Tower A", project_id="P01"
+    )
+    mock_session.scalars.return_value.all.return_value = [
+        Grid(
+            grid_id="G01",
+            building_id="B01",
+            grid_label="1",
+            grid_axis="x",
+            grid_coord={"x": 0, "y": 0},
+        )
+    ]
+
+    response = client.get("/projects/P01/buildings/B01/grid")
+
+    assert response.status_code == 200
+    assert response.json()[0]["grid_label"] == "1"
+
+
+def test_list_materials_happy_path(
+    client: TestClient, mock_session: MagicMock
+) -> None:
+    mock_session.scalars.return_value.all.return_value = [
+        Material(
+            mat_id="K250",
+            mat_name="concrete K250",
+            mat_type="concrete",
+            mat_strength=250,
+            mat_weight=2400,
+        )
+    ]
+
+    response = client.get("/materials")
+
+    assert response.status_code == 200
+    assert response.json()[0]["mat_name"] == "concrete K250"
+
+
+def test_list_sections_happy_path(client: TestClient, mock_session: MagicMock) -> None:
+    mock_session.scalars.return_value.all.return_value = [
+        Section(
+            sect_id="C1",
+            sect_label="C1 - 400x400 column",
+            obj_type="column",
+            dim={"shape": "rectangular", "width": 400, "depth": 400},
+        )
+    ]
+
+    response = client.get("/sections")
+
+    assert response.status_code == 200
+    assert response.json()[0]["sect_label"] == "C1 - 400x400 column"
+
+
+def test_list_barspec_happy_path(client: TestClient, mock_session: MagicMock) -> None:
+    mock_session.scalars.return_value.all.return_value = [
+        BarSpec(
+            barspec_id="D16",
+            barspec_label="D16 deformed BjTS 420",
+            barspec_dia=16,
+            barspec_type="deformed",
+            barspec_grade="BjTS 420",
+            barspec_weight=7850,
+        )
+    ]
+
+    response = client.get("/barspec")
+
+    assert response.status_code == 200
+    assert response.json()[0]["barspec_label"] == "D16 deformed BjTS 420"

@@ -115,7 +115,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Floors */
+        get: operations["list_floors_projects__project_id__buildings__building_id__floors_get"];
         put?: never;
         /** Create Floor */
         post: operations["create_floor_projects__project_id__buildings__building_id__floors_post"];
@@ -132,7 +133,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Zones */
+        get: operations["list_zones_projects__project_id__buildings__building_id__zones_get"];
         put?: never;
         /** Create Zone */
         post: operations["create_zone_projects__project_id__buildings__building_id__zones_post"];
@@ -149,7 +151,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Grid */
+        get: operations["list_grid_projects__project_id__buildings__building_id__grid_get"];
         put?: never;
         /** Create Grid */
         post: operations["create_grid_projects__project_id__buildings__building_id__grid_post"];
@@ -166,7 +169,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Materials */
+        get: operations["list_materials_materials_get"];
         put?: never;
         /** Create Material */
         post: operations["create_material_materials_post"];
@@ -183,7 +187,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Sections */
+        get: operations["list_sections_sections_get"];
         put?: never;
         /** Create Section */
         post: operations["create_section_sections_post"];
@@ -200,7 +205,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Barspec */
+        get: operations["list_barspec_barspec_get"];
         put?: never;
         /** Create Barspec */
         post: operations["create_barspec_barspec_post"];
@@ -862,6 +868,38 @@ export interface operations {
             };
         };
     };
+    list_floors_projects__project_id__buildings__building_id__floors_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FloorResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_floor_projects__project_id__buildings__building_id__floors_post: {
         parameters: {
             query?: never;
@@ -885,6 +923,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FloorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_zones_projects__project_id__buildings__building_id__zones_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ZoneResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -934,6 +1004,38 @@ export interface operations {
             };
         };
     };
+    list_grid_projects__project_id__buildings__building_id__grid_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GridResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_grid_projects__project_id__buildings__building_id__grid_post: {
         parameters: {
             query?: never;
@@ -966,6 +1068,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_materials_materials_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaterialResponse"][];
                 };
             };
         };
@@ -1003,6 +1125,26 @@ export interface operations {
             };
         };
     };
+    list_sections_sections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionResponse"][];
+                };
+            };
+        };
+    };
     create_section_sections_post: {
         parameters: {
             query?: never;
@@ -1032,6 +1174,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_barspec_barspec_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BarSpecResponse"][];
                 };
             };
         };
