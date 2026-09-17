@@ -38,15 +38,193 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/members": {
+    "/projects/{project_id}/buildings/{building_id}/revisions/bulk": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Members */
-        get: operations["get_members_members_get"];
+        get?: never;
+        put?: never;
+        /** Bulk Upload Revision */
+        post: operations["bulk_upload_revision_projects__project_id__buildings__building_id__revisions_bulk_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{project_id}/buildings/{building_id}/revisions/edit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Edit Revision */
+        post: operations["edit_revision_projects__project_id__buildings__building_id__revisions_edit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Projects */
+        get: operations["list_projects_projects_get"];
+        put?: never;
+        /** Create Project */
+        post: operations["create_project_projects_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{project_id}/buildings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Buildings */
+        get: operations["list_buildings_projects__project_id__buildings_get"];
+        put?: never;
+        /** Create Building */
+        post: operations["create_building_projects__project_id__buildings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{project_id}/buildings/{building_id}/floors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Floors */
+        get: operations["list_floors_projects__project_id__buildings__building_id__floors_get"];
+        put?: never;
+        /** Create Floor */
+        post: operations["create_floor_projects__project_id__buildings__building_id__floors_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{project_id}/buildings/{building_id}/zones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Zones */
+        get: operations["list_zones_projects__project_id__buildings__building_id__zones_get"];
+        put?: never;
+        /** Create Zone */
+        post: operations["create_zone_projects__project_id__buildings__building_id__zones_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{project_id}/buildings/{building_id}/grid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Grid */
+        get: operations["list_grid_projects__project_id__buildings__building_id__grid_get"];
+        put?: never;
+        /** Create Grid */
+        post: operations["create_grid_projects__project_id__buildings__building_id__grid_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/materials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Materials */
+        get: operations["list_materials_materials_get"];
+        put?: never;
+        /** Create Material */
+        post: operations["create_material_materials_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sections */
+        get: operations["list_sections_sections_get"];
+        put?: never;
+        /** Create Section */
+        post: operations["create_section_sections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/barspec": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Barspec */
+        get: operations["list_barspec_barspec_get"];
+        put?: never;
+        /** Create Barspec */
+        post: operations["create_barspec_barspec_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{project_id}/buildings/{building_id}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Revisions */
+        get: operations["list_revisions_projects__project_id__buildings__building_id__revisions_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -55,15 +233,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/members/{member_id}": {
+    "/projects/{project_id}/buildings/{building_id}/revisions/{rev_id}/objects": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Member */
-        get: operations["get_member_members__member_id__get"];
+        /** List Objects */
+        get: operations["list_objects_projects__project_id__buildings__building_id__revisions__rev_id__objects_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{project_id}/buildings/{building_id}/revisions/{rev_id}/objects/{obj_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Object Detail */
+        get: operations["get_object_detail_projects__project_id__buildings__building_id__revisions__rev_id__objects__obj_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -76,60 +271,327 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** BarSpecCreate */
+        BarSpecCreate: {
+            /** Barspec Label */
+            barspec_label: string;
+            /** Barspec Dia */
+            barspec_dia: number;
+            /** Barspec Type */
+            barspec_type: string;
+            /** Barspec Grade */
+            barspec_grade: string;
+            /** Barspec Weight */
+            barspec_weight: number;
+        };
+        /** BarSpecResponse */
+        BarSpecResponse: {
+            /** Barspec Id */
+            barspec_id: string;
+            /** Barspec Label */
+            barspec_label: string;
+            /** Barspec Dia */
+            barspec_dia: number;
+            /** Barspec Type */
+            barspec_type: string;
+            /** Barspec Grade */
+            barspec_grade: string;
+            /** Barspec Weight */
+            barspec_weight: number;
+        };
+        /** BuildingCreate */
+        BuildingCreate: {
+            /** Building Name */
+            building_name?: string | null;
+        };
+        /** BuildingResponse */
+        BuildingResponse: {
+            /** Building Id */
+            building_id: string;
+            /** Building Name */
+            building_name: string | null;
+            /** Project Id */
+            project_id: string;
+        };
+        /** BulkUploadRequest */
+        BulkUploadRequest: {
+            /** Objects */
+            objects: components["schemas"]["ObjectCreate"][];
+        };
+        /** EditRevisionRequest */
+        EditRevisionRequest: {
+            /** Changed Objects */
+            changed_objects?: components["schemas"]["ObjectCreate"][];
+            /** Deleted Stable Ids */
+            deleted_stable_ids?: string[];
+        };
+        /** FloorCreate */
+        FloorCreate: {
+            /** Floor Name */
+            floor_name: string;
+            /** Elevation */
+            elevation: number;
+        };
+        /** FloorResponse */
+        FloorResponse: {
+            /** Floor Id */
+            floor_id: string;
+            /** Floor Name */
+            floor_name: string;
+            /** Elevation */
+            elevation: number;
+            /** Building Id */
+            building_id: string;
+        };
+        /** GridCreate */
+        GridCreate: {
+            /** Grid Label */
+            grid_label: string;
+            /**
+             * Grid Axis
+             * @enum {string}
+             */
+            grid_axis: "x" | "y";
+            /** Grid Coord */
+            grid_coord: {
+                [key: string]: number;
+            };
+        };
+        /** GridResponse */
+        GridResponse: {
+            /** Grid Id */
+            grid_id: string;
+            /** Grid Label */
+            grid_label: string;
+            /** Grid Axis */
+            grid_axis: string;
+            /** Grid Coord */
+            grid_coord: {
+                [key: string]: string | number;
+            };
+            /** Building Id */
+            building_id: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /** MemberDetailResponse */
-        MemberDetailResponse: {
-            /** Member Id */
-            member_id: string;
+        /** MaterialCreate */
+        MaterialCreate: {
+            /** Mat Name */
+            mat_name: string;
+            /** Mat Type */
+            mat_type: string;
+            /** Mat Strength */
+            mat_strength: number;
+            /** Mat Weight */
+            mat_weight: number;
+        };
+        /** MaterialResponse */
+        MaterialResponse: {
+            /** Mat Id */
+            mat_id: string;
+            /** Mat Name */
+            mat_name: string;
+            /** Mat Type */
+            mat_type: string;
+            /** Mat Strength */
+            mat_strength: number;
+            /** Mat Weight */
+            mat_weight: number;
+        };
+        /** ObjectCreate */
+        ObjectCreate: {
+            /** Is New */
+            is_new: boolean;
+            /** Obj Mark */
+            obj_mark: string;
             /**
-             * Member Type
+             * Obj Type
              * @enum {string}
              */
-            member_type: "col" | "beam" | "wall" | "slab";
-            /** Storey Id */
-            storey_id: string;
-            /** Dimension Id */
-            dimension_id: string;
-            /** Material Id */
-            material_id: string;
-            /** Zone Id */
-            zone_id: string;
+            obj_type: "column" | "beam" | "wall" | "slab" | "footing" | "stair";
+            /** Floor Name */
+            floor_name: string;
+            /** Zone Label */
+            zone_label: string;
+            /** Sect Label */
+            sect_label: string;
+            /** Mat Name */
+            mat_name: string;
             /** Geometry Points */
             geometry_points: number[][];
-            /** Storey Name */
-            storey_name: string;
-            /** Material Strength Kg Cm2 */
-            material_strength_kg_cm2: number;
-            /** Dimension Section */
-            dimension_section: {
+            /** Reinforcements */
+            reinforcements?: components["schemas"]["ReinforcementCreate"][];
+            /** Stable Id */
+            stable_id?: string | null;
+        };
+        /** ObjectDetail */
+        ObjectDetail: {
+            /** Obj Id */
+            obj_id: string;
+            /** Obj Mark */
+            obj_mark: string;
+            /** Stable Id */
+            stable_id: string;
+            /** Obj Type */
+            obj_type: string;
+            /** Change Status */
+            change_status: string;
+            /** Floor Name */
+            floor_name: string;
+            /** Zone Label */
+            zone_label: string;
+            /** Sect Label */
+            sect_label: string;
+            /** Dimension */
+            dimension: {
                 [key: string]: string | number;
             };
-            /** Pour Sequence */
-            pour_sequence: number;
-        };
-        /** MemberResponse */
-        MemberResponse: {
-            /** Member Id */
-            member_id: string;
-            /**
-             * Member Type
-             * @enum {string}
-             */
-            member_type: "col" | "beam" | "wall" | "slab";
-            /** Storey Id */
-            storey_id: string;
-            /** Dimension Id */
-            dimension_id: string;
-            /** Material Id */
-            material_id: string;
-            /** Zone Id */
-            zone_id: string;
+            /** Mat Name */
+            mat_name: string;
             /** Geometry Points */
             geometry_points: number[][];
+            /** Reinforcements */
+            reinforcements: components["schemas"]["ReinforcementDetail"][];
+            quantity: components["schemas"]["QuantityDetail"] | null;
+        };
+        /**
+         * ObjectListItem
+         * @description The "Combined View" pattern (D39): foreign keys resolved to their
+         *     descriptive values, not returned as bare IDs.
+         */
+        ObjectListItem: {
+            /** Obj Id */
+            obj_id: string;
+            /** Obj Mark */
+            obj_mark: string;
+            /** Stable Id */
+            stable_id: string;
+            /** Obj Type */
+            obj_type: string;
+            /** Change Status */
+            change_status: string;
+            /** Floor Name */
+            floor_name: string;
+            /** Zone Label */
+            zone_label: string;
+            /** Sect Label */
+            sect_label: string;
+            /** Mat Name */
+            mat_name: string;
+        };
+        /** ProjectCreate */
+        ProjectCreate: {
+            /** Project Name */
+            project_name?: string | null;
+        };
+        /** ProjectResponse */
+        ProjectResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Project Name */
+            project_name: string | null;
+        };
+        /** QuantityDetail */
+        QuantityDetail: {
+            /** Qty Sect */
+            qty_sect: string;
+            /** Qty Bar */
+            qty_bar: string;
+        };
+        /** ReinforcementCreate */
+        ReinforcementCreate: {
+            /** Barspec Label */
+            barspec_label: string;
+            /** Bar Role */
+            bar_role: string;
+            /** Bar Count */
+            bar_count: number;
+            /** Bar Len */
+            bar_len: number;
+            /** Bar Space */
+            bar_space?: number | null;
+            /** Bar Hook Type */
+            bar_hook_type?: string | null;
+        };
+        /** ReinforcementDetail */
+        ReinforcementDetail: {
+            /** Bar Id */
+            bar_id: string;
+            /** Barspec Label */
+            barspec_label: string;
+            /** Barspec Dia */
+            barspec_dia: number;
+            /** Barspec Grade */
+            barspec_grade: string;
+            /** Bar Role */
+            bar_role: string;
+            /** Bar Count */
+            bar_count: number;
+            /** Bar Len */
+            bar_len: number;
+            /** Bar Space */
+            bar_space: number | null;
+            /** Bar Hook Type */
+            bar_hook_type: string | null;
+        };
+        /** RevisionListItem */
+        RevisionListItem: {
+            /** Rev Id */
+            rev_id: string;
+            /** Rev Number */
+            rev_number: number;
+            /** Building Id */
+            building_id: string;
+        };
+        /** RevisionObjectResult */
+        RevisionObjectResult: {
+            /** Obj Id */
+            obj_id: string;
+            /** Obj Mark */
+            obj_mark: string;
+            /** Stable Id */
+            stable_id: string;
+            /** Change Status */
+            change_status: string;
+        };
+        /** RevisionResponse */
+        RevisionResponse: {
+            /** Rev Id */
+            rev_id: string;
+            /** Rev Number */
+            rev_number: number;
+            /** Objects */
+            objects: components["schemas"]["RevisionObjectResult"][];
+        };
+        /** SectionCreate */
+        SectionCreate: {
+            /**
+             * Obj Type
+             * @enum {string}
+             */
+            obj_type: "column" | "beam" | "wall" | "slab" | "footing" | "stair";
+            /** Sect Label */
+            sect_label: string;
+            /** Dimension */
+            dimension: {
+                [key: string]: string | number;
+            };
+        };
+        /** SectionResponse */
+        SectionResponse: {
+            /** Sect Id */
+            sect_id: string;
+            /** Sect Label */
+            sect_label: string;
+            /** Obj Type */
+            obj_type: string;
+            /** Dim */
+            dim: {
+                [key: string]: string | number;
+            };
         };
         /** ValidationError */
         ValidationError: {
@@ -143,6 +605,24 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** ZoneCreate */
+        ZoneCreate: {
+            /** Zone Label */
+            zone_label: string;
+            /** Pour Seq */
+            pour_seq: number;
+        };
+        /** ZoneResponse */
+        ZoneResponse: {
+            /** Zone Id */
+            zone_id: string;
+            /** Zone Label */
+            zone_label: string;
+            /** Pour Seq */
+            pour_seq: number;
+            /** Building Id */
+            building_id: string;
         };
     };
     responses: never;
@@ -197,7 +677,79 @@ export interface operations {
             };
         };
     };
-    get_members_members_get: {
+    bulk_upload_revision_projects__project_id__buildings__building_id__revisions_bulk_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_revision_projects__project_id__buildings__building_id__revisions_edit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_projects_projects_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -212,17 +764,50 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MemberResponse"][];
+                    "application/json": components["schemas"]["ProjectResponse"][];
                 };
             };
         };
     };
-    get_member_members__member_id__get: {
+    create_project_projects_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_buildings_projects__project_id__buildings_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                member_id: string;
+                project_id: string;
             };
             cookie?: never;
         };
@@ -234,7 +819,504 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MemberDetailResponse"];
+                    "application/json": components["schemas"]["BuildingResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_building_projects__project_id__buildings_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BuildingCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuildingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_floors_projects__project_id__buildings__building_id__floors_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FloorResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_floor_projects__project_id__buildings__building_id__floors_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FloorCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FloorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_zones_projects__project_id__buildings__building_id__zones_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ZoneResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_zone_projects__project_id__buildings__building_id__zones_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ZoneCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ZoneResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_grid_projects__project_id__buildings__building_id__grid_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GridResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_grid_projects__project_id__buildings__building_id__grid_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GridCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GridResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_materials_materials_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaterialResponse"][];
+                };
+            };
+        };
+    };
+    create_material_materials_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MaterialCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaterialResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sections_sections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionResponse"][];
+                };
+            };
+        };
+    };
+    create_section_sections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_barspec_barspec_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BarSpecResponse"][];
+                };
+            };
+        };
+    };
+    create_barspec_barspec_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BarSpecCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BarSpecResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_revisions_projects__project_id__buildings__building_id__revisions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionListItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_objects_projects__project_id__buildings__building_id__revisions__rev_id__objects_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                building_id: string;
+                rev_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObjectListItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_object_detail_projects__project_id__buildings__building_id__revisions__rev_id__objects__obj_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                building_id: string;
+                rev_id: string;
+                obj_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObjectDetail"];
                 };
             };
             /** @description Validation Error */

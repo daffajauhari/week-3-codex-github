@@ -13,10 +13,18 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --type-col: #aa3bff;
+  --type-column: #aa3bff;
   --type-beam: #2f7fd9;
   --type-wall: #1f9e6d;
   --type-slab: #c9861a;
+  --type-footing: #a15c2e;
+  --type-stair: #0891b2;
+
+  --status-added: #1f9e6d;
+  --status-modified: #c9861a;
+  --status-unchanged: #6b6375;
+  --status-deleted: #d9534f;
+  --status-restored: #2f7fd9;
 
   --sans: 'Ubuntu', system-ui, 'Segoe UI', Roboto;
   --heading: 'Ubuntu', system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -53,10 +61,18 @@
     --shadow:
       rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
 
-    --type-col: #c084fc;
+    --type-column: #c084fc;
     --type-beam: #63b3f0;
     --type-wall: #4ade9b;
     --type-slab: #f0b429;
+    --type-footing: #d98a54;
+    --type-stair: #22d3ee;
+
+    --status-added: #4ade9b;
+    --status-modified: #f0b429;
+    --status-unchanged: #9ca3af;
+    --status-deleted: #f87171;
+    --status-restored: #63b3f0;
   }
 
   #social .button-icon {
