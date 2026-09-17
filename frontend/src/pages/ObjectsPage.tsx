@@ -29,6 +29,7 @@ function ObjectsPage() {
 
   useEffect(() => {
     async function loadProjects() {
+      setErrorMessage("");
       try {
         const data = await fetchJson<ProjectResponse[]>("/projects");
         setProjects(data);
@@ -45,6 +46,7 @@ function ObjectsPage() {
 
   useEffect(() => {
     async function loadBuildings() {
+      setErrorMessage("");
       if (!selectedProjectId) {
         setBuildings([]);
         setSelectedBuildingId("");
@@ -66,6 +68,7 @@ function ObjectsPage() {
 
   useEffect(() => {
     async function loadRevisions() {
+      setErrorMessage("");
       if (!selectedProjectId || !selectedBuildingId) {
         setRevisions([]);
         setSelectedRevId("");
@@ -97,6 +100,7 @@ function ObjectsPage() {
     async function loadObjects() {
       setSelectedObjId(null);
       setObjectDetail(null);
+      setErrorMessage("");
 
       if (!selectedProjectId || !selectedBuildingId || !selectedRevId) {
         setObjects([]);
@@ -327,7 +331,7 @@ function ObjectsPage() {
                   <span className="stat-value">
                     {objectDetail.quantity?.qty_sect ?? "-"}
                     {objectDetail.quantity && (
-                      <span className="unit">m&sup3;/kg</span>
+                      <span className="unit">m&sup3;</span>
                     )}
                   </span>
                 </div>
